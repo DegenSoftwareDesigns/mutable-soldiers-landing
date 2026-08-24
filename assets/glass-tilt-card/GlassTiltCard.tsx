@@ -13,6 +13,12 @@ export interface GlassTiltCardProps {
   maxTilt?: number;
   /** Si se apaga, la tarjeta queda quieta cuando no hay hover (sin el "float" idle). */
   idleFloat?: boolean;
+  /** Permite que el contenido defina la altura de la tarjeta. */
+  contentMode?: "fill" | "intrinsic";
+  /** Clase opcional aplicada directamente a la superficie de cristal. */
+  cardClassName?: string;
+  /** Desactiva tilt, reflejos ligados al cursor y float cuando es false. */
+  interactive?: boolean;
 }
 
 const MAX_SHADOW = 26;
@@ -24,6 +30,9 @@ export function GlassTiltCard({
   className,
   maxTilt = 12,
   idleFloat = true,
+  contentMode = "fill",
+  cardClassName,
+  interactive = true,
 }: GlassTiltCardProps) {
   const stageRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -34,6 +43,12 @@ export function GlassTiltCard({
   // comentario largo sobre esto en GlassTiltCard.module.css.
   const handleMove = useCallback(
     (clientX: number, clientY: number) => {
+      if (
+        !interactive ||
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ) {
+        return;
+      }
       const stage = stageRef.current;
       const card = cardRef.current;
       if (!stage || !card) return;
@@ -60,7 +75,7 @@ export function GlassTiltCard({
       const tiltAmount = (Math.abs(rotateX) + Math.abs(rotateY)) / (maxTilt * 2);
       card.style.setProperty("--ca", `${0.15 + tiltAmount * 0.55}`);
     },
-    [maxTilt]
+    [interactive, maxTilt]
   );
 
   const activate = useCallback(() => {
@@ -105,16 +120,24 @@ export function GlassTiltCard({
   return (
     <div
       ref={stageRef}
-      className={[styles.stage, className].filter(Boolean).join(" ")}
-      onMouseEnter={activate}
+      className={[
+        styles.stage,
+        contentMode === "intrinsic" ? styles.intrinsic : "",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      onMouseEnter={interactive ? activate : undefined}
       onMouseMove={(e) => handleMove(e.clientX, e.clientY)}
-      onMouseLeave={release}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={release}
+      onMouseLeave={interactive ? release : undefined}
+      onTouchMove={interactive ? handleTouchMove : undefined}
+      onTouchEnd={interactive ? release : undefined}
     >
       <div
         ref={cardRef}
-        className={[styles.card, !idleFloat ? styles.isActive : ""].filter(Boolean).join(" ")}
+        className={[styles.card, !idleFloat ? styles.isActive : "", cardClassName]
+          .filter(Boolean)
+          .join(" ")}
       >
         <div className={styles.glassTint} />
         <div className={styles.glassTint2} />

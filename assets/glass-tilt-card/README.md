@@ -61,8 +61,11 @@ opening the standalone `glass-tilt-card.html` reference).
 | ----------- | ----------- | ------- | ------------------------------------------------------------ |
 | `children`  | `ReactNode` | —       | Content inside the card (image, text, etc.)                  |
 | `className` | `string`    | —       | Extra classes for the outer container                        |
+| `cardClassName` | `string` | —       | Extra classes for the glass surface itself                   |
 | `maxTilt`   | `number`    | `12`    | Maximum tilt angle in degrees, on each axis                  |
 | `idleFloat` | `boolean`   | `true`  | If `false`, the card stays still outside of hover             |
+| `interactive` | `boolean` | `true`  | Enables pointer tilt, cursor reflections, and idle movement   |
+| `contentMode` | `"fill" \| "intrinsic"` | `"fill"` | Lets content fill a fixed card or define its height |
 
 ## Technical notes for the dev
 

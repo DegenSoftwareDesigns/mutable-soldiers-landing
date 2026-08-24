@@ -216,7 +216,7 @@ button {
   will-change: transform, opacity;
 }
 
-.story-card .glass-card {
+.story-card .glass-card-stage {
   pointer-events: auto;
 }
 
@@ -270,28 +270,11 @@ button {
 .glass-card {
   position: relative;
   width: 100%;
-  overflow: hidden;
-  border: 2px solid var(--glass-border);
-  border-radius: clamp(1.75rem, 2.6vw, 3.125rem);
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.035) 45%),
-    var(--glass);
-  box-shadow:
-    0 1.5rem 5rem rgba(0, 0, 0, 0.34),
-    inset 0 1px rgba(255, 255, 255, 0.18),
-    inset 0 -1px rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(8px) saturate(1.18);
-  -webkit-backdrop-filter: blur(8px) saturate(1.18);
   font-family: var(--display-font);
-  transform-style: preserve-3d;
-  will-change: transform;
 }
 
-.glass-card__shine {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(118deg, rgba(255, 255, 255, 0.14), transparent 34%, transparent 70%, rgba(112, 235, 255, 0.05));
+.glass-card-stage {
+  --glass-radius: clamp(1.75rem, 2.6vw, 3.125rem);
 }
 
 .glass-card__content {
