@@ -13,6 +13,7 @@ import { useGSAP } from "@gsap/react";
 import { GlassCard, CTAButton } from "./GlassCard";
 import { AmbientVideo, CinematicVideoLayer } from "./MediaLayers";
 import { PackSceneCanvas, type PackSceneReady } from "./PackSceneCanvas";
+import { useAssistedScroll } from "./useAssistedScroll";
 import { useSmoothScroll } from "./useSmoothScroll";
 import {
   currentChapter,
@@ -180,7 +181,8 @@ export function MutableSoldiersExperience() {
   const [debug, setDebug] = useState(false);
   const [diagnosticProgress, setDiagnosticProgress] = useState(0);
 
-  useSmoothScroll(loaderVisible);
+  const lenisRef = useSmoothScroll(loaderVisible);
+  useAssistedScroll({ disabled: loaderVisible, lenisRef });
 
   useEffect(() => {
     setDebug(new URLSearchParams(window.location.search).has("debug"));

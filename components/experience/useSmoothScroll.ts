@@ -56,4 +56,6 @@ export function useSmoothScroll(locked: boolean) {
       requestAnimationFrame(() => ScrollTrigger.refresh());
     }
   }, [locked]);
+
+  return lenisRef;
 }

@@ -23,6 +23,21 @@ export const storyChapters: readonly StoryChapter[] = [
   { id: "final", label: "Ambient return and CTA", range: [0.94, 1] },
 ] as const;
 
+export const assistedScrollAnchors = [
+  { id: "hero", label: "Hero", progress: 0 },
+  { id: "two-paths", label: "Two Packs. Two Paths.", progress: 0.195 },
+  { id: "first-drop", label: "First Drop Reveal", progress: 0.285 },
+  { id: "fusion", label: "Fusion", progress: 0.38 },
+  { id: "scene-1", label: "Scene 1", progress: 0.56 },
+  { id: "classes", label: "Classes", progress: 0.64 },
+  { id: "scene-2", label: "Scene 2", progress: 0.695 },
+  { id: "rarities", label: "Rarities", progress: 0.75 },
+  { id: "scene-3", label: "Scene 3", progress: 0.805 },
+  { id: "artists", label: "Featured Artists", progress: 0.86 },
+  { id: "scene-4", label: "Scene 4", progress: 0.91 },
+  { id: "final", label: "Final CTA", progress: 0.975 },
+] as const;
+
 export const uiWindows = {
   hero: [0, 0.08],
   twoPaths: [0.155, 0.235],
@@ -212,6 +227,16 @@ export const experienceTuning = {
   smoothScroll: {
     duration: 1.08,
     wheelMultiplier: 0.9,
+  },
+  assistedScroll: {
+    wheelIntentThreshold: 36,
+    touchIntentThreshold: 44,
+    intentResetMs: 180,
+    dwellMs: 2000,
+    anchorEpsilon: 0.008,
+    minTransitionSeconds: 0.8,
+    maxTransitionSeconds: 1.35,
+    secondsPerProgress: 7,
   },
   loaderTimeoutMs: 6500,
 } as const;
