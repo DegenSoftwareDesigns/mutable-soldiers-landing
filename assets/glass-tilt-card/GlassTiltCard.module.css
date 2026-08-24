@@ -1,0 +1,188 @@
+/*
+  El "stage" es la zona de hover: nunca recibe transform. Los eventos de
+  mouse se escuchan acá (no en la tarjeta), así el hit-test del navegador
+  no se mueve mientras la tarjeta rota/escala visualmente adentro. Escuchar
+  los eventos sobre el elemento transformado es lo que causa flicker en los
+  bordes -- ver nota en GlassTiltCard.tsx.
+
+  El tamaño (width/aspect-ratio) NO se define acá: lo controla quien use el
+  componente, envolviéndolo en un contenedor con el tamaño que necesite
+  (ver README / ejemplo de uso).
+*/
+.stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  perspective: 1200px;
+  cursor: pointer;
+}
+
+.card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 24px;
+  overflow: hidden;
+  isolation: isolate;
+  transform-style: preserve-3d;
+  transform: perspective(1200px) rotateX(2deg) rotateY(-3deg) translateY(0px) scale(1);
+  transition:
+    transform 0.6s cubic-bezier(0.23, 1, 0.32, 1),
+    box-shadow 0.6s ease;
+  box-shadow:
+    inset 1.5px 1.5px 0 rgba(255, 255, 255, 0.32),
+    inset -1.5px -1.5px 1px rgba(0, 0, 0, 0.35),
+    inset 0 0 50px rgba(255, 255, 255, 0.05),
+    var(--sx, 0px) var(--sy, 22px) var(--sb, 40px) rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  animation: idleFloat 6s ease-in-out infinite;
+  /* el hit-test vive en .stage; la tarjeta no intercepta eventos */
+  pointer-events: none;
+}
+
+.isActive {
+  transition: box-shadow 0.15s ease;
+  animation: none;
+}
+
+@keyframes idleFloat {
+  0%,
+  100% {
+    transform: perspective(1200px) rotateX(2deg) rotateY(-3deg) translateY(0px) scale(1);
+  }
+  50% {
+    transform: perspective(1200px) rotateX(-2deg) rotateY(3deg) translateY(-8px) scale(1);
+  }
+}
+
+/* capa 1 de vidrio: refracción principal (superficie frontal) */
+.glassTint {
+  position: absolute;
+  inset: 0;
+  backdrop-filter: url(#glass-distortion) blur(14px) saturate(130%) brightness(1.05);
+  -webkit-backdrop-filter: blur(16px) saturate(130%) brightness(1.05);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.09),
+    rgba(255, 255, 255, 0.02) 45%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+}
+
+/* capa 2 de vidrio: "segunda superficie", más tenue y desplazada unos
+   píxeles -- simula el grosor real del vidrio (doble refracción) */
+.glassTint2 {
+  position: absolute;
+  inset: 0;
+  backdrop-filter: url(#glass-distortion-2) blur(6px) saturate(115%);
+  -webkit-backdrop-filter: blur(8px) saturate(115%);
+  background: rgba(255, 255, 255, 0.02);
+  transform: translate(3px, 2px) scale(1.008);
+  opacity: 0.55;
+  mix-blend-mode: soft-light;
+}
+
+/* slot para el contenido del dev (imagen, texto, lo que sea) */
+.content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+/* reflejo diagonal: sigue al cursor en tiempo real.
+   Se activa por .isActive (controlado por JS vía .stage), no por :hover
+   -- usar :hover directo sobre un elemento transformado en 3D es otra
+   fuente de flicker, porque el estado hover nativo del navegador también
+   se calcula sobre la geometría ya transformada. */
+.specular {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.2) 45%,
+    rgba(255, 255, 255, 0.42) 50%,
+    rgba(255, 255, 255, 0.2) 55%,
+    transparent 70%
+  );
+  background-size: 280% 280%;
+  background-position: var(--mx, 50%) var(--my, 50%);
+  mix-blend-mode: overlay;
+  opacity: 0;
+  transition:
+    opacity 0.35s ease,
+    background-position 0.05s linear;
+}
+.card.isActive .specular {
+  opacity: 1;
+}
+
+/* brillo puntual que sigue al cursor */
+.glint {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle 90px at var(--mx, 50%) var(--my, 50%),
+    rgba(255, 255, 255, 0.55),
+    rgba(255, 255, 255, 0.08) 45%,
+    transparent 70%
+  );
+  mix-blend-mode: screen;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+.card.isActive .glint {
+  opacity: 0.9;
+}
+
+/* aberración cromática sutil en el borde: se intensifica con la inclinación */
+.chromatic {
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  box-shadow:
+    inset 1.4px 0 0 rgba(255, 70, 70, 0.35),
+    inset -1.4px 0 0 rgba(70, 190, 255, 0.35),
+    inset 0 1.4px 0 rgba(255, 70, 70, 0.2),
+    inset 0 -1.4px 0 rgba(70, 190, 255, 0.2);
+  mix-blend-mode: screen;
+  opacity: var(--ca, 0.15);
+  transition: opacity 0.2s ease;
+}
+
+.edge {
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.edge::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.16),
+    transparent 12%,
+    transparent 88%,
+    rgba(0, 0, 0, 0.25)
+  );
+}
+
+/* piso de calidad: respetar reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    animation: none !important;
+    transition: none !important;
+  }
+  .specular,
+  .glint,
+  .chromatic {
+    transition: none !important;
+  }
+}
