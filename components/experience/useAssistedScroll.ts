@@ -12,10 +12,8 @@ type AssistedScrollOptions = {
   lenisRef: MutableRefObject<Lenis | null>;
 };
 
-const cubicInOut = (value: number) =>
-  value < 0.5
-    ? 4 * value * value * value
-    : 1 - Math.pow(-2 * value + 2, 3) / 2;
+const premiumEaseInOut = (value: number) =>
+  value * value * value * (value * (value * 6 - 15) + 10);
 
 function normalizeWheelDelta(event: WheelEvent) {
   if (event.deltaMode === WheelEvent.DOM_DELTA_LINE) return event.deltaY * 16;
@@ -53,11 +51,13 @@ export function useAssistedScroll({
     let touchStartY: number | null = null;
     let touchStartedOnInteractiveElement = false;
     let intentResetTimer = 0;
+    let settleTimer = 0;
     let dwellTimer = 0;
     let transitionFallbackTimer = 0;
 
     const clearTimers = () => {
       window.clearTimeout(intentResetTimer);
+      window.clearTimeout(settleTimer);
       window.clearTimeout(dwellTimer);
       window.clearTimeout(transitionFallbackTimer);
     };
@@ -97,7 +97,12 @@ export function useAssistedScroll({
     const beginDwell = () => {
       window.clearTimeout(transitionFallbackTimer);
       smoothScroller?.stop();
-      dwellTimer = window.setTimeout(release, tuning.dwellMs);
+      settleTimer = window.setTimeout(
+        () => {
+          dwellTimer = window.setTimeout(release, tuning.dwellMs);
+        },
+        reduceMotion ? 0 : tuning.settleMs,
+      );
     };
 
     const moveToAnchor = (direction: 1 | -1) => {
@@ -106,14 +111,15 @@ export function useAssistedScroll({
       if (targetIndex < 0) return;
 
       const anchor = assistedScrollAnchors[targetIndex];
-      const distance = Math.abs(anchor.progress - currentProgress());
-      const duration = Math.min(
-        tuning.maxTransitionSeconds,
-        Math.max(
-          tuning.minTransitionSeconds,
-          distance * tuning.secondsPerProgress,
-        ),
+      const transitionAnchorIndex =
+        direction > 0
+          ? targetIndex
+          : Math.min(targetIndex + 1, assistedScrollAnchors.length - 1);
+      const transitionMs = Math.max(
+        tuning.minTransitionMs,
+        assistedScrollAnchors[transitionAnchorIndex].transitionMs,
       );
+      const duration = transitionMs / 1000;
       const targetY = anchor.progress * maxScroll();
       const lenis = smoothScroller;
       let arrivalHandled = false;
@@ -136,7 +142,7 @@ export function useAssistedScroll({
       lenis.stop();
       lenis.scrollTo(targetY, {
         duration,
-        easing: cubicInOut,
+        easing: premiumEaseInOut,
         force: true,
         lock: true,
         onComplete: handleArrival,

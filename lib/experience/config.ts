@@ -24,18 +24,33 @@ export const storyChapters: readonly StoryChapter[] = [
 ] as const;
 
 export const assistedScrollAnchors = [
-  { id: "hero", label: "Hero", progress: 0 },
-  { id: "two-paths", label: "Two Packs. Two Paths.", progress: 0.195 },
-  { id: "first-drop", label: "First Drop Reveal", progress: 0.285 },
-  { id: "fusion", label: "Fusion", progress: 0.38 },
-  { id: "scene-1", label: "Scene 1", progress: 0.56 },
-  { id: "classes", label: "Classes", progress: 0.64 },
-  { id: "scene-2", label: "Scene 2", progress: 0.695 },
-  { id: "rarities", label: "Rarities", progress: 0.75 },
-  { id: "scene-3", label: "Scene 3", progress: 0.805 },
-  { id: "artists", label: "Featured Artists", progress: 0.86 },
-  { id: "scene-4", label: "Scene 4", progress: 0.91 },
-  { id: "final", label: "Final CTA", progress: 0.975 },
+  { id: "hero", label: "Hero", progress: 0, transitionMs: 0 },
+  {
+    id: "two-paths",
+    label: "Two Packs. Two Paths.",
+    progress: 0.195,
+    transitionMs: 1850,
+  },
+  {
+    id: "first-drop",
+    label: "First Drop Reveal",
+    progress: 0.285,
+    transitionMs: 1450,
+  },
+  { id: "fusion", label: "Fusion", progress: 0.38, transitionMs: 1750 },
+  { id: "scene-1", label: "Scene 1", progress: 0.56, transitionMs: 2600 },
+  { id: "classes", label: "Classes", progress: 0.64, transitionMs: 1600 },
+  { id: "scene-2", label: "Scene 2", progress: 0.695, transitionMs: 1500 },
+  { id: "rarities", label: "Rarities", progress: 0.75, transitionMs: 1350 },
+  { id: "scene-3", label: "Scene 3", progress: 0.805, transitionMs: 1500 },
+  {
+    id: "artists",
+    label: "Featured Artists",
+    progress: 0.86,
+    transitionMs: 1350,
+  },
+  { id: "scene-4", label: "Scene 4", progress: 0.91, transitionMs: 1500 },
+  { id: "final", label: "Final CTA", progress: 0.975, transitionMs: 2300 },
 ] as const;
 
 export const uiWindows = {
@@ -233,10 +248,9 @@ export const experienceTuning = {
     touchIntentThreshold: 44,
     intentResetMs: 180,
     dwellMs: 2000,
+    settleMs: 350,
     anchorEpsilon: 0.008,
-    minTransitionSeconds: 0.8,
-    maxTransitionSeconds: 1.35,
-    secondsPerProgress: 7,
+    minTransitionMs: 1300,
   },
   loaderTimeoutMs: 6500,
 } as const;
