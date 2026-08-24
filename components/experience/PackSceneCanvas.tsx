@@ -25,13 +25,25 @@ type PackSceneCanvasProps = {
 type PackObject = {
   transform: THREE.Group;
   content: THREE.Group;
-  emissiveMaterials: Array<
-    THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial | THREE.MeshPhongMaterial
-  >;
+  emissiveMaterials: TintableMaterial[];
+  materialStates: Array<{
+    material: TintableMaterial;
+    color: THREE.Color;
+    emissive: THREE.Color;
+  }>;
 };
+
+type TintableMaterial =
+  | THREE.MeshStandardMaterial
+  | THREE.MeshPhysicalMaterial
+  | THREE.MeshPhongMaterial;
 
 const violet = new THREE.Color(0x8b2cff);
 const cyan = new THREE.Color(0x18e8dd);
+const greenLightColor = new THREE.Color(0x39ffad);
+const purpleLightColor = new THREE.Color(0xa23cff);
+const fusionSilver = new THREE.Color(0x929eaa);
+const fusionSilverEmissive = new THREE.Color(0x465565);
 
 function createFallbackPack(color: THREE.Color): PackObject {
   const transform = new THREE.Group();
@@ -77,7 +89,16 @@ function createFallbackPack(color: THREE.Color): PackObject {
   notch.position.set(0, 1.02, 0.13);
   content.add(notch);
 
-  return { transform, content, emissiveMaterials: [bodyMaterial, trimMaterial] };
+  return {
+    transform,
+    content,
+    emissiveMaterials: [bodyMaterial, trimMaterial],
+    materialStates: [bodyMaterial, trimMaterial].map((material) => ({
+      material,
+      color: material.color.clone(),
+      emissive: material.emissive.clone(),
+    })),
+  };
 }
 
 function disposeObject(root: THREE.Object3D) {
@@ -115,8 +136,9 @@ function cloneMaterials(root: THREE.Object3D) {
   });
 }
 
-function collectEmissiveMaterials(root: THREE.Object3D, accent: THREE.Color) {
+function collectMaterials(root: THREE.Object3D, accent: THREE.Color) {
   const result: PackObject["emissiveMaterials"] = [];
+  const materialStates: PackObject["materialStates"] = [];
   root.traverse((child) => {
     if (!(child instanceof THREE.Mesh)) return;
     const materials = Array.isArray(child.material)
@@ -129,13 +151,18 @@ function collectEmissiveMaterials(root: THREE.Object3D, accent: THREE.Color) {
         material instanceof THREE.MeshPhongMaterial
       ) {
         if (material.emissive.getHex() === 0) {
-          material.emissive.copy(accent).multiplyScalar(0.08);
+          material.emissive.copy(accent).multiplyScalar(0.14);
         }
         result.push(material);
+        materialStates.push({
+          material,
+          color: material.color.clone(),
+          emissive: material.emissive.clone(),
+        });
       }
     }
   });
-  return result;
+  return { emissiveMaterials: result, materialStates };
 }
 
 async function loadPack(url: string, fallbackColor: THREE.Color) {
@@ -153,12 +180,13 @@ async function loadPack(url: string, fallbackColor: THREE.Color) {
     content.position.sub(center);
     content.scale.setScalar(2.45 / maxDimension);
     transform.add(content);
+    const materials = collectMaterials(content, fallbackColor);
 
     return {
       pack: {
         transform,
         content,
-        emissiveMaterials: collectEmissiveMaterials(content, fallbackColor),
+        ...materials,
       } satisfies PackObject,
       fallback: false,
       error: null,
@@ -192,6 +220,16 @@ function setEmissive(pack: PackObject, intensity: number) {
   }
 }
 
+function setNeutralBlend(pack: PackObject, amount: number) {
+  const blend = smoothstep(amount) * packMotion.fusion.neutralBlend;
+  for (const state of pack.materialStates) {
+    state.material.color.copy(state.color).lerp(fusionSilver, blend);
+    state.material.emissive
+      .copy(state.emissive)
+      .lerp(fusionSilverEmissive, blend * 0.7);
+  }
+}
+
 function lerp(a: number, b: number, t: number) {
   return THREE.MathUtils.lerp(a, b, smoothstep(t));
 }
@@ -209,11 +247,18 @@ function updatePackState(
   const pulseEnvelope =
     smoothstep(rangeProgress(progress, packMotion.ranges.pulseIn)) *
     (1 - smoothstep(rangeProgress(progress, packMotion.ranges.pulseOut)));
+  const pulse = 0.5 + 0.5 * Math.sin(elapsed * packMotion.glow.pulseSpeed);
 
   if (progress >= packMotion.ranges.finalReveal[0]) {
-    packA.transform.position.set(packMotion.spread.greenX, packMotion.final.greenY, 0);
+    setNeutralBlend(packA, 0);
+    setNeutralBlend(packB, 0);
+    packA.transform.position.set(
+      packMotion.final.greenX,
+      packMotion.final.greenY,
+      0,
+    );
     packB.transform.position.set(
-      packMotion.spread.purpleX,
+      packMotion.final.purpleX,
       packMotion.final.purpleY,
       packMotion.final.purpleZ,
     );
@@ -266,20 +311,51 @@ function updatePackState(
   );
   const fusedScale = lerp(earlyScale, packMotion.fusion.scale, fusion);
   const zoomScale = lerp(fusedScale, packMotion.fusion.zoomScale, zoom);
+  setNeutralBlend(packA, fusion);
+  setNeutralBlend(packB, fusion);
+  const floatEnvelope = 1 - fusion;
+  const greenFloatY =
+    Math.sin(elapsed * packMotion.presentation.greenFloatSpeed) *
+    packMotion.presentation.floatYAmplitude *
+    floatEnvelope;
+  const purpleFloatY =
+    Math.sin(elapsed * packMotion.presentation.purpleFloatSpeed + Math.PI * 0.72) *
+    packMotion.presentation.floatYAmplitude *
+    floatEnvelope;
+  const greenFloatZ =
+    Math.sin(elapsed * packMotion.presentation.greenFloatSpeed + 0.8) *
+    packMotion.presentation.floatZAmplitude *
+    floatEnvelope;
+  const purpleFloatZ =
+    Math.sin(elapsed * packMotion.presentation.purpleFloatSpeed + 2.6) *
+    packMotion.presentation.floatZAmplitude *
+    floatEnvelope;
 
   packA.transform.position.set(
     aX,
-    lerp(packMotion.presentation.greenY, 0, fusion),
-    lerp(0, packMotion.fusion.zoomZ, zoom),
+    lerp(packMotion.presentation.greenY + greenFloatY, 0, fusion),
+    lerp(
+      lerp(packMotion.hero.greenZ, packMotion.spread.greenZ, reposition) +
+        greenFloatZ,
+      packMotion.fusion.greenZ,
+      fusion,
+    ) + lerp(0, packMotion.fusion.zoomZ, zoom),
   );
   packB.transform.position.set(
     bX,
-    lerp(packMotion.presentation.purpleY, 0, fusion),
-    0,
+    lerp(packMotion.presentation.purpleY + purpleFloatY, 0, fusion),
+    lerp(
+      lerp(packMotion.hero.purpleZ, packMotion.spread.purpleZ, reposition) +
+        purpleFloatZ,
+      packMotion.fusion.purpleZ,
+      fusion,
+    ),
   );
-  packA.transform.scale.setScalar(zoomScale);
+  const breathingScale =
+    1 + pulseEnvelope * pulse * packMotion.glow.scaleAmplitude;
+  packA.transform.scale.setScalar(zoomScale * breathingScale);
   packB.transform.scale.setScalar(
-    lerp(earlyScale, packMotion.fusion.scale, fusion),
+    lerp(earlyScale, packMotion.fusion.scale, fusion) * breathingScale,
   );
   packA.transform.rotation.set(
     packMotion.presentation.greenRotation[0],
@@ -298,8 +374,6 @@ function updatePackState(
     lerp(packMotion.presentation.purpleRotation[2], 0, fusion),
   );
 
-  const pulse =
-    0.5 + 0.5 * Math.sin(elapsed * packMotion.glow.pulseSpeed);
   const glowRamp = rangeProgress(progress, packMotion.ranges.fusion);
   const intensity =
     packMotion.glow.base +
@@ -379,7 +453,34 @@ export function PackSceneCanvas({
       2,
     );
     rim.position.set(2.5, -1.8, 2.2);
-    scene.add(hemisphere, key, fill, rim);
+    const greenAccent = new THREE.PointLight(
+      greenLightColor,
+      experienceTuning.lighting.greenAccentIntensity,
+      6,
+      2,
+    );
+    const purpleAccent = new THREE.PointLight(
+      purpleLightColor,
+      experienceTuning.lighting.purpleAccentIntensity,
+      6,
+      2,
+    );
+    const silverFusionLight = new THREE.PointLight(
+      fusionSilver,
+      0,
+      8,
+      2,
+    );
+    silverFusionLight.position.set(0, 0.1, 1.6);
+    scene.add(
+      hemisphere,
+      key,
+      fill,
+      rim,
+      greenAccent,
+      purpleAccent,
+      silverFusionLight,
+    );
 
     if (debug) scene.add(new THREE.AxesHelper(2));
 
@@ -406,6 +507,29 @@ export function PackSceneCanvas({
       previousElapsed = elapsed;
       if (packA && packB) {
         updatePackState(packA, packB, progressRef.current, elapsed);
+        const fusionProgress =
+          progressRef.current < packMotion.ranges.zoom[1]
+            ? smoothstep(
+                rangeProgress(progressRef.current, packMotion.ranges.fusion),
+              )
+            : 0;
+        renderer.domElement.style.filter = `saturate(${1 - fusionProgress * 0.86}) brightness(${1 + fusionProgress * 0.04})`;
+        greenAccent.intensity =
+          experienceTuning.lighting.greenAccentIntensity *
+          (1 - fusionProgress * 0.82);
+        purpleAccent.intensity =
+          experienceTuning.lighting.purpleAccentIntensity *
+          (1 - fusionProgress * 0.82);
+        silverFusionLight.intensity =
+          experienceTuning.lighting.fusionSilverIntensity * fusionProgress;
+        greenAccent.position.copy(packA.transform.position);
+        greenAccent.position.x -= 0.32;
+        greenAccent.position.y += 0.2;
+        greenAccent.position.z += 1.35;
+        purpleAccent.position.copy(packB.transform.position);
+        purpleAccent.position.x += 0.32;
+        purpleAccent.position.y += 0.15;
+        purpleAccent.position.z += 1.35;
       }
       rim.intensity =
         experienceTuning.lighting.rimIntensity +

@@ -258,12 +258,19 @@ export function MutableSoldiersExperience() {
       gsap.set(cards, {
         autoAlpha: 0,
         y: uiMotion.enterY,
+        z: uiMotion.enterZ,
         scale: uiMotion.enterScale,
+        rotationX: uiMotion.enterRotationX,
+        rotationY: uiMotion.enterRotationY,
+        transformOrigin: "50% 50%",
       });
       gsap.set('[data-card="hero"] [data-card-motion]', {
         autoAlpha: 1,
         y: 0,
+        z: 0,
         scale: 1,
+        rotationX: 0,
+        rotationY: 0,
       });
       gsap.set('[data-layer="ambient"]', { opacity: 1 });
       gsap.set('[data-layer="webgl"]', { opacity: 1 });
@@ -289,12 +296,18 @@ export function MutableSoldiersExperience() {
               {
                 autoAlpha: 0,
                 y: reduceMotion ? 0 : uiMotion.enterY,
+                z: reduceMotion ? 0 : uiMotion.enterZ,
                 scale: reduceMotion ? 1 : uiMotion.enterScale,
+                rotationX: reduceMotion ? 0 : uiMotion.enterRotationX,
+                rotationY: reduceMotion ? 0 : uiMotion.enterRotationY,
               },
               {
                 autoAlpha: 1,
                 y: 0,
+                z: 0,
                 scale: 1,
+                rotationX: 0,
+                rotationY: 0,
                 duration: transitionDuration,
                 immediateRender: false,
               },
@@ -306,7 +319,10 @@ export function MutableSoldiersExperience() {
                 {
                   autoAlpha: 0,
                   y: reduceMotion ? 0 : uiMotion.exitY,
+                  z: reduceMotion ? 0 : uiMotion.exitZ,
                   scale: reduceMotion ? 1 : uiMotion.exitScale,
+                  rotationX: reduceMotion ? 0 : uiMotion.exitRotationX,
+                  rotationY: reduceMotion ? 0 : uiMotion.exitRotationY,
                   duration: transitionDuration,
                 },
                 end - transitionDuration,
@@ -319,7 +335,10 @@ export function MutableSoldiersExperience() {
             {
               autoAlpha: 0,
               y: reduceMotion ? 0 : uiMotion.heroExitY,
+              z: reduceMotion ? 0 : uiMotion.heroExitZ,
               scale: reduceMotion ? 1 : uiMotion.heroExitScale,
+              rotationX: reduceMotion ? 0 : uiMotion.heroExitRotationX,
+              rotationY: reduceMotion ? 0 : uiMotion.heroExitRotationY,
               duration: transitionDuration * 1.5,
             },
             uiWindows.hero[1] - transitionDuration * 1.5,

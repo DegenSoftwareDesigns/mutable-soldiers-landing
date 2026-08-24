@@ -85,38 +85,19 @@ button {
 .ambient-layer {
   z-index: 0;
   overflow: hidden;
-  background: #070516;
+  background: #000;
   will-change: opacity;
 }
 
 .ambient-fallback {
   position: absolute;
   inset: -8%;
-  background:
-    radial-gradient(circle at 72% 24%, rgba(42, 247, 227, 0.12), transparent 28%),
-    radial-gradient(circle at 24% 42%, rgba(134, 44, 255, 0.42), transparent 34%),
-    radial-gradient(circle at 70% 74%, rgba(112, 45, 255, 0.3), transparent 30%),
-    conic-gradient(from 110deg at 50% 50%, #080518, #16072f, #03040b, #0b0520);
-  filter: saturate(1.2) contrast(1.08);
-  transform: scale(1.08);
+  background: #000;
 }
 
 .ambient-fallback::before,
 .ambient-fallback::after {
-  position: absolute;
-  inset: 0;
-  content: "";
-  background-image:
-    radial-gradient(circle at center, rgba(255, 255, 255, 0.42) 0 1px, transparent 2px),
-    linear-gradient(115deg, transparent 44%, rgba(180, 111, 255, 0.13) 48%, transparent 53%);
-  background-size: 62px 62px, 170px 130px;
-  mix-blend-mode: screen;
-  opacity: 0.42;
-}
-
-.ambient-fallback::after {
-  transform: rotate(24deg) scale(1.25);
-  opacity: 0.22;
+  display: none;
 }
 
 .ambient-video,
@@ -130,6 +111,7 @@ button {
 
 .ambient-video {
   z-index: 1;
+  opacity: 0.9;
 }
 
 .ambient-vignette {
@@ -202,17 +184,22 @@ button {
 .story-overlay {
   z-index: 4;
   pointer-events: none;
+  perspective: 1400px;
+  perspective-origin: 50% 50%;
 }
 
 .story-card {
   position: absolute;
   display: flex;
   pointer-events: none;
+  transform-style: preserve-3d;
 }
 
 .story-card__motion {
   width: 100%;
   visibility: hidden;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
   will-change: transform, opacity;
 }
 
