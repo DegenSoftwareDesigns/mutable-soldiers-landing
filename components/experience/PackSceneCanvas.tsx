@@ -218,15 +218,30 @@ function setOpacity(pack: PackObject, opacity: number) {
     return;
   }
   pack.lastOpacity = opacity;
+  pack.content.visible = opacity > 0.001;
   pack.content.traverse((child) => {
     if (!(child instanceof THREE.Mesh)) return;
     const materials = Array.isArray(child.material)
       ? child.material
       : [child.material];
     for (const material of materials) {
-      material.transparent = opacity < 0.999;
       material.opacity = opacity;
-      material.depthWrite = opacity > 0.96;
+    }
+  });
+}
+
+function configurePackRendering(pack: PackObject, renderOrder: number) {
+  pack.content.traverse((child) => {
+    if (!(child instanceof THREE.Mesh)) return;
+    child.renderOrder = renderOrder;
+    const materials = Array.isArray(child.material)
+      ? child.material
+      : [child.material];
+    for (const material of materials) {
+      material.transparent = true;
+      material.depthTest = true;
+      material.depthWrite = true;
+      material.needsUpdate = true;
     }
   });
 }
@@ -314,8 +329,8 @@ function updatePackState(
           packMotion.final.hoverAmplitude,
       packMotion.final.purpleRotation[2],
     );
-    setOpacity(packA, finalReveal);
-    setOpacity(packB, finalReveal);
+    setOpacity(packA, 1);
+    setOpacity(packB, 1);
     setEmissive(packA, packMotion.final.emissiveIntensity);
     setEmissive(packB, packMotion.final.emissiveIntensity);
     return;
@@ -412,10 +427,7 @@ function updatePackState(
     glowRamp * packMotion.glow.fusionGain;
   setEmissive(packA, intensity);
   setEmissive(packB, intensity);
-  setOpacity(
-    packA,
-    1 - smoothstep(rangeProgress(progress, packMotion.ranges.webglFade)),
-  );
+  setOpacity(packA, 1);
   setOpacity(
     packB,
     1 - smoothstep(rangeProgress(progress, packMotion.ranges.purpleMergeFade)),
@@ -613,6 +625,8 @@ export function PackSceneCanvas({
       }
       packA = resultA.pack;
       packB = resultB.pack;
+      configurePackRendering(packB, 0);
+      configurePackRendering(packA, 1);
       scene.add(packA.transform, packB.transform);
       onReadyRef.current({
         usingFallbacks: resultA.fallback || resultB.fallback,

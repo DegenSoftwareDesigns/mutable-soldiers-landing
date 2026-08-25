@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:rendering": "node --test tests/pack-rendering-contract.test.mjs"
   },
   "dependencies": {
     "@fontsource/audiowide": "^5.3.0",

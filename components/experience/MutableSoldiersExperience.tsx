@@ -461,6 +461,10 @@ export function MutableSoldiersExperience() {
             layerTransitions.cinematicToAmbient[0],
           );
 
+          timeline.eventCallback("onUpdate", () => {
+            progressSignal.set(timeline.progress());
+          });
+
           const trigger = ScrollTrigger.create({
             id: "mutable-soldiers-master",
             trigger: scrollRoot,
@@ -469,12 +473,9 @@ export function MutableSoldiersExperience() {
             animation: timeline,
             scrub: reduceMotion ? true : uiMotion.scrollScrub,
             invalidateOnRefresh: true,
-            onUpdate: (self) => {
-              progressSignal.set(self.progress);
-            },
           });
 
-          progressSignal.set(trigger.progress);
+          progressSignal.set(timeline.progress());
 
           requestAnimationFrame(() => ScrollTrigger.refresh());
           return () => {
