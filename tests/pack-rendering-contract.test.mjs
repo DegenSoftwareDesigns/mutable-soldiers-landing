@@ -12,6 +12,7 @@ const experiencePath = new URL(
   "../components/experience/MutableSoldiersExperience.tsx",
   import.meta.url,
 );
+const configPath = new URL("../lib/experience/config.ts", import.meta.url);
 
 test("pack fades keep a stable Three.js render mode", async () => {
   const source = await readFile(packScenePath, "utf8");
@@ -65,4 +66,34 @@ test("the canvas layer owns the WebGL-to-video crossfade", async () => {
 
 test("contract targets the current project", () => {
   assert.match(projectRoot, /mutable-soldiers-landing[\\/]$/);
+});
+
+test("First Drop runs fusion and zoom without an intermediate stop", async () => {
+  const source = await readFile(configPath, "utf8");
+  const anchorBlock = source.match(
+    /export const assistedScrollAnchors = \[([\s\S]*?)\] as const;/,
+  )?.[1];
+
+  assert.ok(anchorBlock, "assisted scroll anchors must be declared");
+  const ids = Array.from(anchorBlock.matchAll(/id:\s*"([^"]+)"/g), (match) =>
+    match[1],
+  );
+  const firstDropIndex = ids.indexOf("first-drop");
+
+  assert.notEqual(firstDropIndex, -1, "First Drop must remain an anchor");
+  assert.equal(
+    ids[firstDropIndex + 1],
+    "scene-1",
+    "the next gesture after First Drop must complete fusion and zoom",
+  );
+  assert.doesNotMatch(
+    anchorBlock,
+    /id:\s*"fusion"/,
+    "fusion is an animation phase, not a separate assisted-scroll stop",
+  );
+  assert.match(
+    anchorBlock,
+    /id:\s*"scene-1"[\s\S]*?transitionMs:\s*4000/,
+    "the combined transition needs enough time for fusion, zoom, and crossfade",
+  );
 });
