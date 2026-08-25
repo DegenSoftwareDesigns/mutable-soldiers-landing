@@ -36,8 +36,13 @@
     var(--sx, 0px) var(--sy, 22px) var(--sb, 40px) rgba(0, 0, 0, 0.55);
   border: 1px solid rgba(255, 255, 255, 0.15);
   animation: idleFloat 6s ease-in-out infinite;
+  animation-play-state: paused;
   /* el hit-test vive en .stage; la tarjeta no intercepta eventos */
   pointer-events: none;
+}
+
+:global(.story-card[data-card-active="true"]) .card {
+  animation-play-state: running;
 }
 
 .intrinsic {

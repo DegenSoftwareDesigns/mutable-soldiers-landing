@@ -22,6 +22,10 @@ import {
   uiMotion,
   uiWindows,
 } from "@/lib/experience/config";
+import {
+  createExperienceProgressSignal,
+  type ExperienceProgressSignal,
+} from "@/lib/experience/progress";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger, useGSAP);
@@ -71,9 +75,51 @@ function StoryCardShell({
   );
 }
 
-function StoryCards() {
+const storyCardWindows = {
+  hero: uiWindows.hero,
+  "two-paths": uiWindows.twoPaths,
+  "first-drop": uiWindows.firstDrop,
+  classes: uiWindows.classes,
+  rarities: uiWindows.rarities,
+  artists: uiWindows.artists,
+  final: uiWindows.final,
+} as const;
+
+function StoryCards({
+  progressSignal,
+}: {
+  progressSignal: ExperienceProgressSignal;
+}) {
+  const overlayRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const overlay = overlayRef.current;
+    if (!overlay) return;
+    const cards = Array.from(
+      overlay.querySelectorAll<HTMLElement>("[data-card]"),
+    );
+
+    const syncActiveCards = (progress: number) => {
+      cards.forEach((card) => {
+        const name = card.dataset.card as keyof typeof storyCardWindows;
+        const activeRange = storyCardWindows[name];
+        if (!activeRange) return;
+        const active =
+          progress >= activeRange[0] - layerTransitions.uiTransition &&
+          progress <= activeRange[1] + layerTransitions.uiTransition;
+        const nextValue = active ? "true" : "false";
+        if (card.dataset.cardActive !== nextValue) {
+          card.dataset.cardActive = nextValue;
+        }
+      });
+    };
+
+    syncActiveCards(progressSignal.get());
+    return progressSignal.subscribe(syncActiveCards);
+  }, [progressSignal]);
+
   return (
-    <div className="story-overlay" data-layer="ui">
+    <div className="story-overlay" data-layer="ui" ref={overlayRef}>
       <StoryCardShell name="hero" className="story-card--hero">
         <GlassCard className="glass-card--hero">
           <h1>
@@ -171,7 +217,11 @@ function StoryCards() {
 export function MutableSoldiersExperience() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
-  const progressRef = useRef(0);
+  const progressSignalRef = useRef<ExperienceProgressSignal | null>(null);
+  if (!progressSignalRef.current) {
+    progressSignalRef.current = createExperienceProgressSignal();
+  }
+  const progressSignal = progressSignalRef.current;
   const [ambientReady, setAmbientReady] = useState<boolean | null>(null);
   const [packStatus, setPackStatus] = useState<PackSceneReady | null>(null);
   const [fontsReady, setFontsReady] = useState(false);
@@ -245,11 +295,11 @@ export function MutableSoldiersExperience() {
   useEffect(() => {
     if (!showDiagnostics) return;
     const interval = window.setInterval(
-      () => setDiagnosticProgress(progressRef.current),
+      () => setDiagnosticProgress(progressSignal.get()),
       160,
     );
     return () => window.clearInterval(interval);
-  }, [showDiagnostics]);
+  }, [progressSignal, showDiagnostics]);
 
   useGSAP(
     () => {
@@ -420,9 +470,11 @@ export function MutableSoldiersExperience() {
             scrub: reduceMotion ? true : uiMotion.scrollScrub,
             invalidateOnRefresh: true,
             onUpdate: (self) => {
-              progressRef.current = self.progress;
+              progressSignal.set(self.progress);
             },
           });
+
+          progressSignal.set(trigger.progress);
 
           requestAnimationFrame(() => ScrollTrigger.refresh());
           return () => {
@@ -448,19 +500,22 @@ export function MutableSoldiersExperience() {
   return (
     <main className="experience-scroll" ref={scrollRef} style={style}>
       <div className="experience-stage" ref={stageRef}>
-        <AmbientVideo progressRef={progressRef} onSettled={onAmbientSettled} />
+        <AmbientVideo
+          progressSignal={progressSignal}
+          onSettled={onAmbientSettled}
+        />
         <div className="pack-layer" data-layer="webgl">
           <PackSceneCanvas
-            progressRef={progressRef}
+            progressSignal={progressSignal}
             debug={debug}
             onReady={onPacksReady}
           />
         </div>
         <CinematicVideoLayer
-          progressRef={progressRef}
+          progressSignal={progressSignal}
           onStatusChange={onVideoStatus}
         />
-        <StoryCards />
+        <StoryCards progressSignal={progressSignal} />
 
         {showDiagnostics && (
           <aside className="experience-diagnostics" aria-live="polite">

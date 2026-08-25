@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 import styles from "./GlassTiltCard.module.css";
 
@@ -37,25 +37,45 @@ export function GlassTiltCard({
   const stageRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const idleTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stageRectRef = useRef<DOMRect | null>(null);
+  const pointerRef = useRef<{ x: number; y: number } | null>(null);
+  const moveFrameRef = useRef<number | null>(null);
+  const reduceMotionRef = useRef(false);
+
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const syncReducedMotion = () => {
+      reduceMotionRef.current = media.matches;
+    };
+    const invalidateRect = () => {
+      stageRectRef.current = null;
+    };
+    syncReducedMotion();
+    media.addEventListener("change", syncReducedMotion);
+    window.addEventListener("resize", invalidateRect);
+
+    return () => {
+      media.removeEventListener("change", syncReducedMotion);
+      window.removeEventListener("resize", invalidateRect);
+      if (idleTimeout.current) clearTimeout(idleTimeout.current);
+      if (moveFrameRef.current !== null) {
+        cancelAnimationFrame(moveFrameRef.current);
+      }
+    };
+  }, []);
 
   // El rect se toma de .stage, que JAMÁS se transforma -> siempre estable,
   // sin importar cuánto esté rotada la tarjeta en ese instante. Ver el
   // comentario largo sobre esto en GlassTiltCard.module.css.
-  const handleMove = useCallback(
-    (clientX: number, clientY: number) => {
-      if (
-        !interactive ||
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      ) {
-        return;
-      }
-      const stage = stageRef.current;
+  const applyMove = useCallback(() => {
+      moveFrameRef.current = null;
       const card = cardRef.current;
-      if (!stage || !card) return;
+      const rect = stageRectRef.current;
+      const pointer = pointerRef.current;
+      if (!card || !rect || !pointer) return;
 
-      const rect = stage.getBoundingClientRect();
-      const px = (clientX - rect.left) / rect.width;
-      const py = (clientY - rect.top) / rect.height;
+      const px = (pointer.x - rect.left) / rect.width;
+      const py = (pointer.y - rect.top) / rect.height;
       const cx = Math.min(Math.max(px, 0), 1);
       const cy = Math.min(Math.max(py, 0), 1);
 
@@ -74,18 +94,42 @@ export function GlassTiltCard({
 
       const tiltAmount = (Math.abs(rotateX) + Math.abs(rotateY)) / (maxTilt * 2);
       card.style.setProperty("--ca", `${0.15 + tiltAmount * 0.55}`);
+    }, [maxTilt]);
+
+  const handleMove = useCallback(
+    (clientX: number, clientY: number) => {
+      if (!interactive || reduceMotionRef.current) return;
+      const stage = stageRef.current;
+      if (!stage || !cardRef.current) return;
+      if (!stageRectRef.current) {
+        stageRectRef.current = stage.getBoundingClientRect();
+      }
+      pointerRef.current = { x: clientX, y: clientY };
+      if (moveFrameRef.current === null) {
+        moveFrameRef.current = requestAnimationFrame(applyMove);
+      }
     },
-    [interactive, maxTilt]
+    [applyMove, interactive],
   );
 
   const activate = useCallback(() => {
     if (idleTimeout.current) clearTimeout(idleTimeout.current);
+    if (!stageRectRef.current && stageRef.current) {
+      stageRectRef.current = stageRef.current.getBoundingClientRect();
+    }
     cardRef.current?.classList.add(styles.isActive);
   }, []);
 
   const release = useCallback(() => {
     const card = cardRef.current;
     if (!card) return;
+
+    if (moveFrameRef.current !== null) {
+      cancelAnimationFrame(moveFrameRef.current);
+      moveFrameRef.current = null;
+    }
+    pointerRef.current = null;
+    stageRectRef.current = null;
 
     card.style.transform = REST_TRANSFORM;
     card.style.setProperty("--mx", "50%");

@@ -10,6 +10,7 @@ import {
   rangeProgress,
   smoothstep,
 } from "@/lib/experience/config";
+import type { ExperienceProgressSignal } from "@/lib/experience/progress";
 
 export type PackSceneReady = {
   usingFallbacks: boolean;
@@ -17,7 +18,7 @@ export type PackSceneReady = {
 };
 
 type PackSceneCanvasProps = {
-  progressRef: React.MutableRefObject<number>;
+  progressSignal: ExperienceProgressSignal;
   debug?: boolean;
   onReady: (result: PackSceneReady) => void;
 };
@@ -31,6 +32,9 @@ type PackObject = {
     color: THREE.Color;
     emissive: THREE.Color;
   }>;
+  lastOpacity: number | null;
+  lastEmissiveIntensity: number | null;
+  lastNeutralBlend: number | null;
 };
 
 type TintableMaterial =
@@ -98,6 +102,9 @@ function createFallbackPack(color: THREE.Color): PackObject {
       color: material.color.clone(),
       emissive: material.emissive.clone(),
     })),
+    lastOpacity: null,
+    lastEmissiveIntensity: null,
+    lastNeutralBlend: null,
   };
 }
 
@@ -187,6 +194,9 @@ async function loadPack(url: string, fallbackColor: THREE.Color) {
         transform,
         content,
         ...materials,
+        lastOpacity: null,
+        lastEmissiveIntensity: null,
+        lastNeutralBlend: null,
       } satisfies PackObject,
       fallback: false,
       error: null,
@@ -201,6 +211,13 @@ async function loadPack(url: string, fallbackColor: THREE.Color) {
 }
 
 function setOpacity(pack: PackObject, opacity: number) {
+  if (
+    pack.lastOpacity !== null &&
+    Math.abs(pack.lastOpacity - opacity) < 0.0005
+  ) {
+    return;
+  }
+  pack.lastOpacity = opacity;
   pack.content.traverse((child) => {
     if (!(child instanceof THREE.Mesh)) return;
     const materials = Array.isArray(child.material)
@@ -215,6 +232,13 @@ function setOpacity(pack: PackObject, opacity: number) {
 }
 
 function setEmissive(pack: PackObject, intensity: number) {
+  if (
+    pack.lastEmissiveIntensity !== null &&
+    Math.abs(pack.lastEmissiveIntensity - intensity) < 0.0005
+  ) {
+    return;
+  }
+  pack.lastEmissiveIntensity = intensity;
   for (const material of pack.emissiveMaterials) {
     material.emissiveIntensity = intensity;
   }
@@ -222,6 +246,13 @@ function setEmissive(pack: PackObject, intensity: number) {
 
 function setNeutralBlend(pack: PackObject, amount: number) {
   const blend = smoothstep(amount) * packMotion.fusion.neutralBlend;
+  if (
+    pack.lastNeutralBlend !== null &&
+    Math.abs(pack.lastNeutralBlend - blend) < 0.0005
+  ) {
+    return;
+  }
+  pack.lastNeutralBlend = blend;
   for (const state of pack.materialStates) {
     state.material.color.copy(state.color).lerp(fusionSilver, blend);
     state.material.emissive
@@ -392,7 +423,7 @@ function updatePackState(
 }
 
 export function PackSceneCanvas({
-  progressRef,
+  progressSignal,
   debug = false,
   onReady,
 }: PackSceneCanvasProps) {
@@ -419,8 +450,12 @@ export function PackSceneCanvas({
     camera.position.set(0, 0, experienceTuning.camera.designZ);
     camera.lookAt(0, 0, 0);
 
+    const effectiveDpr = Math.min(
+      window.devicePixelRatio,
+      experienceTuning.maxDpr,
+    );
     const renderer = new THREE.WebGLRenderer({
-      antialias: window.devicePixelRatio <= 1.25,
+      antialias: effectiveDpr < experienceTuning.maxDpr,
       alpha: true,
       powerPreference: "high-performance",
     });
@@ -428,7 +463,7 @@ export function PackSceneCanvas({
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = experienceTuning.lighting.exposure;
     renderer.setClearColor(0x000000, 0);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, experienceTuning.maxDpr));
+    renderer.setPixelRatio(effectiveDpr);
     host.appendChild(renderer.domElement);
 
     const hemisphere = new THREE.HemisphereLight(
@@ -499,20 +534,16 @@ export function PackSceneCanvas({
     resize();
 
     const clock = new THREE.Clock();
-    let sleepTimer = 0;
     const isRenderActive = (progress: number) =>
       progress <= packMotion.ranges.webglFade[1] + 0.005 ||
       progress >= packMotion.ranges.finalReveal[0] - 0.005;
 
+    let renderActive = isRenderActive(progressSignal.get());
     const render = () => {
+      frame = 0;
       if (disposed) return;
-      const progress = progressRef.current;
-      if (!isRenderActive(progress)) {
-        sleepTimer = window.setTimeout(() => {
-          frame = requestAnimationFrame(render);
-        }, 100);
-        return;
-      }
+      const progress = progressSignal.get();
+      if (document.hidden || !renderActive) return;
 
       const elapsed = clock.getElapsedTime();
       if (packA && packB) {
@@ -550,6 +581,27 @@ export function PackSceneCanvas({
       frame = requestAnimationFrame(render);
     };
 
+    const startRendering = () => {
+      if (disposed || document.hidden || !renderActive || frame) return;
+      frame = requestAnimationFrame(render);
+    };
+
+    const stopRendering = () => {
+      if (!frame) return;
+      cancelAnimationFrame(frame);
+      frame = 0;
+    };
+
+    const syncRenderActivity = (progress: number) => {
+      const nextRenderActive = isRenderActive(progress);
+      if (nextRenderActive === renderActive) return;
+      renderActive = nextRenderActive;
+      if (renderActive) startRendering();
+      else stopRendering();
+    };
+
+    const unsubscribeProgress = progressSignal.subscribe(syncRenderActivity);
+
     Promise.all([
       loadPack(assetByKey.packA.src, cyan),
       loadPack(assetByKey.packB.src, violet),
@@ -572,19 +624,18 @@ export function PackSceneCanvas({
 
     const onVisibility = () => {
       if (document.hidden) {
-        cancelAnimationFrame(frame);
-        window.clearTimeout(sleepTimer);
+        stopRendering();
       } else {
-        frame = requestAnimationFrame(render);
+        startRendering();
       }
     };
     document.addEventListener("visibilitychange", onVisibility);
-    frame = requestAnimationFrame(render);
+    startRendering();
 
     return () => {
       disposed = true;
-      cancelAnimationFrame(frame);
-      window.clearTimeout(sleepTimer);
+      stopRendering();
+      unsubscribeProgress();
       document.removeEventListener("visibilitychange", onVisibility);
       resizeObserver.disconnect();
       if (packA) disposeObject(packA.transform);
@@ -594,7 +645,7 @@ export function PackSceneCanvas({
       renderer.domElement.remove();
       scene.clear();
     };
-  }, [debug, progressRef]);
+  }, [debug, progressSignal]);
 
   return <div ref={hostRef} className="pack-canvas" aria-hidden="true" />;
 }

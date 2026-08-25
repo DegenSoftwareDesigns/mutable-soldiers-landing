@@ -223,7 +223,8 @@ export const experienceTuning = {
   maxDpr: 1.5,
   media: {
     scrubFps: 30,
-    ambientStatePollMs: 100,
+    firstSceneMetadataPreloadProgress: 0.15,
+    firstSceneAutoPreloadProgress: 0.33,
   },
   camera: {
     fov: 35,

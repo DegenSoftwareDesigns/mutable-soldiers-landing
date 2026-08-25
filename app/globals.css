@@ -154,6 +154,9 @@ button {
 
 .cinematic-video {
   opacity: 0;
+}
+
+.cinematic-video[data-loaded="true"] {
   will-change: opacity;
 }
 
@@ -200,6 +203,9 @@ button {
   visibility: hidden;
   transform-style: preserve-3d;
   backface-visibility: hidden;
+}
+
+.story-card[data-card-active="true"] .story-card__motion {
   will-change: transform, opacity;
 }
 
