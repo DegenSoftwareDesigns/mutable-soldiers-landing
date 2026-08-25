@@ -220,7 +220,11 @@ export const uiMotion = {
 
 export const experienceTuning = {
   scrollLengthVh: 1500,
-  maxDpr: 1.75,
+  maxDpr: 1.5,
+  media: {
+    scrubFps: 30,
+    ambientStatePollMs: 100,
+  },
   camera: {
     fov: 35,
     near: 0.1,

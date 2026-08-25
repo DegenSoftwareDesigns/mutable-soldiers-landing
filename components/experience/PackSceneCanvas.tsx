@@ -420,7 +420,7 @@ export function PackSceneCanvas({
     camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({
-      antialias: true,
+      antialias: window.devicePixelRatio <= 1.25,
       alpha: true,
       powerPreference: "high-performance",
     });
@@ -499,21 +499,32 @@ export function PackSceneCanvas({
     resize();
 
     const clock = new THREE.Clock();
-    let previousElapsed = 0;
+    let sleepTimer = 0;
+    const isRenderActive = (progress: number) =>
+      progress <= packMotion.ranges.webglFade[1] + 0.005 ||
+      progress >= packMotion.ranges.finalReveal[0] - 0.005;
+
     const render = () => {
       if (disposed) return;
+      const progress = progressRef.current;
+      if (!isRenderActive(progress)) {
+        sleepTimer = window.setTimeout(() => {
+          frame = requestAnimationFrame(render);
+        }, 100);
+        return;
+      }
+
       const elapsed = clock.getElapsedTime();
-      const delta = Math.min(0.05, elapsed - previousElapsed);
-      previousElapsed = elapsed;
       if (packA && packB) {
-        updatePackState(packA, packB, progressRef.current, elapsed);
+        updatePackState(packA, packB, progress, elapsed);
         const fusionProgress =
-          progressRef.current < packMotion.ranges.zoom[1]
+          progress < packMotion.ranges.zoom[1]
             ? smoothstep(
-                rangeProgress(progressRef.current, packMotion.ranges.fusion),
+                rangeProgress(progress, packMotion.ranges.fusion),
               )
             : 0;
-        renderer.domElement.style.filter = `saturate(${1 - fusionProgress * 0.86}) brightness(${1 + fusionProgress * 0.04})`;
+        renderer.toneMappingExposure =
+          experienceTuning.lighting.exposure * (1 + fusionProgress * 0.04);
         greenAccent.intensity =
           experienceTuning.lighting.greenAccentIntensity *
           (1 - fusionProgress * 0.82);
@@ -536,7 +547,7 @@ export function PackSceneCanvas({
         Math.sin(elapsed * experienceTuning.lighting.rimPulseSpeed) *
           experienceTuning.lighting.rimPulseAmplitude;
       renderer.render(scene, camera);
-      if (delta >= 0) frame = requestAnimationFrame(render);
+      frame = requestAnimationFrame(render);
     };
 
     Promise.all([
@@ -562,8 +573,8 @@ export function PackSceneCanvas({
     const onVisibility = () => {
       if (document.hidden) {
         cancelAnimationFrame(frame);
+        window.clearTimeout(sleepTimer);
       } else {
-        clock.getDelta();
         frame = requestAnimationFrame(render);
       }
     };
@@ -573,6 +584,7 @@ export function PackSceneCanvas({
     return () => {
       disposed = true;
       cancelAnimationFrame(frame);
+      window.clearTimeout(sleepTimer);
       document.removeEventListener("visibilitychange", onVisibility);
       resizeObserver.disconnect();
       if (packA) disposeObject(packA.transform);

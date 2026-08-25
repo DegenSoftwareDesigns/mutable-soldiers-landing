@@ -448,7 +448,7 @@ export function MutableSoldiersExperience() {
   return (
     <main className="experience-scroll" ref={scrollRef} style={style}>
       <div className="experience-stage" ref={stageRef}>
-        <AmbientVideo onSettled={onAmbientSettled} />
+        <AmbientVideo progressRef={progressRef} onSettled={onAmbientSettled} />
         <div className="pack-layer" data-layer="webgl">
           <PackSceneCanvas
             progressRef={progressRef}

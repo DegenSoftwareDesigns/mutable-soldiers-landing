@@ -1,5 +1,5 @@
 /**
- * Filtros SVG de refracción usados por <GlassTiltCard />.
+ * Filtro SVG de refracción usado por <GlassTiltCard />.
  *
  * IMPORTANTE: montar este componente UNA sola vez, cerca de la raíz del árbol
  * (ej. en app/layout.tsx). Las tarjetas referencian estos filtros por id vía
@@ -27,24 +27,6 @@ export function GlassFilters() {
           in="SourceGraphic"
           in2="blurredNoise"
           scale={18}
-          xChannelSelector="R"
-          yChannelSelector="G"
-        />
-      </filter>
-
-      <filter id="glass-distortion-2" x="-20%" y="-20%" width="140%" height="140%">
-        <feTurbulence
-          type="fractalNoise"
-          baseFrequency="0.014 0.02"
-          numOctaves={2}
-          seed={41}
-          result="noise2"
-        />
-        <feGaussianBlur in="noise2" stdDeviation={1.5} result="blurredNoise2" />
-        <feDisplacementMap
-          in="SourceGraphic"
-          in2="blurredNoise2"
-          scale={10}
           xChannelSelector="R"
           yChannelSelector="G"
         />
