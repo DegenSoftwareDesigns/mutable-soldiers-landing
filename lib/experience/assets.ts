@@ -2,10 +2,7 @@ export type AssetKey =
   | "ambient"
   | "packA"
   | "packB"
-  | "scene1"
-  | "scene2"
-  | "scene3"
-  | "scene4";
+  | "cinematic";
 
 export type ExperienceAsset = {
   key: AssetKey;
@@ -42,32 +39,11 @@ export const experienceAssets: readonly ExperienceAsset[] = [
     label: "Purple Mutable Pack GLB",
   },
   {
-    key: "scene1",
+    key: "cinematic",
     kind: "video",
-    src: "/assets/scene-1-web.webm",
+    src: "/assets/scenes-scroll.mp4",
     critical: false,
-    label: "Cinematic scene 1",
-  },
-  {
-    key: "scene2",
-    kind: "video",
-    src: "/assets/scene-2-web.webm",
-    critical: false,
-    label: "Cinematic scene 2",
-  },
-  {
-    key: "scene3",
-    kind: "video",
-    src: "/assets/scene-3-web.webm",
-    critical: false,
-    label: "Cinematic scene 3",
-  },
-  {
-    key: "scene4",
-    kind: "video",
-    src: "/assets/scene-4-web.webm",
-    critical: false,
-    label: "Cinematic scene 4",
+    label: "Cinematic sequence",
   },
 ] as const;
 

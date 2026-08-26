@@ -27,7 +27,7 @@ npm run build
 
 - `mutable-soldiers-implementation-spec.md` — implementation source of truth.
 - `IMPLEMENTATION_PLAN.md` — milestone roadmap and current status.
-- `ASSET_PREFLIGHT.md` — verified video, GLB and matching-frame findings.
+- `ASSET_PREFLIGHT.md` — verified video, pause-frame and GLB findings.
 
 The project deliberately contains no navbar, footer, backend, wallet or XRPL
 logic. Production integration is a separate handoff.

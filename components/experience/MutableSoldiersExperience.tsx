@@ -11,9 +11,12 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { GlassCard, CTAButton } from "./GlassCard";
-import { AmbientVideo, CinematicVideoLayer } from "./MediaLayers";
+import {
+  AmbientVideo,
+  CinematicVideoLayer,
+  type CinematicVideoStatus,
+} from "./MediaLayers";
 import { PackSceneCanvas, type PackSceneReady } from "./PackSceneCanvas";
-import { useAssistedScroll } from "./useAssistedScroll";
 import { useSmoothScroll } from "./useSmoothScroll";
 import {
   currentChapter,
@@ -30,15 +33,6 @@ import {
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger, useGSAP);
 }
-
-type VideoStatus = Record<string, "loading" | "ready" | "missing">;
-
-const defaultVideoStatus: VideoStatus = {
-  scene1: "loading",
-  scene2: "loading",
-  scene3: "loading",
-  scene4: "loading",
-};
 
 function Loader({ exiting, progress }: { exiting: boolean; progress: number }) {
   return (
@@ -225,14 +219,14 @@ export function MutableSoldiersExperience() {
   const [ambientReady, setAmbientReady] = useState<boolean | null>(null);
   const [packStatus, setPackStatus] = useState<PackSceneReady | null>(null);
   const [fontsReady, setFontsReady] = useState(false);
-  const [videoStatus, setVideoStatus] = useState<VideoStatus>(defaultVideoStatus);
+  const [videoStatus, setVideoStatus] =
+    useState<CinematicVideoStatus>("loading");
   const [loaderExiting, setLoaderExiting] = useState(false);
   const [loaderVisible, setLoaderVisible] = useState(true);
   const [debug, setDebug] = useState(false);
   const [diagnosticProgress, setDiagnosticProgress] = useState(0);
 
-  const lenisRef = useSmoothScroll(loaderVisible);
-  useAssistedScroll({ disabled: loaderVisible, lenisRef });
+  useSmoothScroll(loaderVisible);
 
   useEffect(() => {
     setDebug(new URLSearchParams(window.location.search).has("debug"));
@@ -258,7 +252,7 @@ export function MutableSoldiersExperience() {
   const onPacksReady = useCallback((result: PackSceneReady) => {
     setPackStatus(result);
   }, []);
-  const onVideoStatus = useCallback((status: VideoStatus) => {
+  const onVideoStatus = useCallback((status: CinematicVideoStatus) => {
     setVideoStatus(status);
   }, []);
 
@@ -289,7 +283,7 @@ export function MutableSoldiersExperience() {
   const hasMissingAssets =
     ambientReady === false ||
     Boolean(packStatus?.usingFallbacks) ||
-    Object.values(videoStatus).some((value) => value === "missing");
+    videoStatus === "missing";
   const showDiagnostics = debug || hasMissingAssets;
 
   useEffect(() => {
@@ -471,7 +465,7 @@ export function MutableSoldiersExperience() {
             start: "top top",
             end: "bottom bottom",
             animation: timeline,
-            scrub: reduceMotion ? true : uiMotion.scrollScrub,
+            scrub: true,
             invalidateOnRefresh: true,
           });
 
@@ -528,9 +522,7 @@ export function MutableSoldiersExperience() {
             <span>
               Packs: {packStatus === null ? "loading" : packStatus.usingFallbacks ? "fallback" : "ready"}
             </span>
-            <span>
-              Videos: {Object.values(videoStatus).filter((value) => value === "ready").length}/4 ready
-            </span>
+            <span>Cinematic: {videoStatus}</span>
           </aside>
         )}
 

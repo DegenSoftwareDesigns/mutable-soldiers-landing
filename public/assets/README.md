@@ -6,11 +6,12 @@ Production media served by the landing page:
 bg-video-16-9.webm
 mutable-pack-green-web.glb
 mutable-pack-purple-web.glb
-scene-1-web.webm
-scene-2-web.webm
-scene-3-web.webm
-scene-4-web.webm
+scenes-scroll.mp4
 ```
+
+`scenes.mp4` is the smaller supplied AV1 source. The application uses the
+H.264 `scenes-scroll.mp4` derivative because its 0.5-second keyframe cadence is
+suited to responsive scroll seeking.
 
 If the GLB filenames differ, set `NEXT_PUBLIC_PACK_GREEN_URL` and
 `NEXT_PUBLIC_PACK_PURPLE_URL` or update `lib/experience/assets.ts`.

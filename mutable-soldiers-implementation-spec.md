@@ -28,7 +28,7 @@ The [`Reference Design / Desktop - 16:9`](https://www.figma.com/design/V9aQC1d6r
 - Three.js for the two 3D packs and their transformation.
 - GSAP and ScrollTrigger for timelines and transitions.
 - Smooth scrolling with Locomotive Scroll or an equivalent compatible integration.
-- Ambient background video, `scene-1` through `scene-4`, glass cards, and CTAs.
+- Ambient background video, the unified cinematic sequence, glass cards, and CTAs.
 - Initial loader, microinteractions, basic accessibility, and performance optimization.
 
 ### Out of scope
@@ -57,10 +57,7 @@ Landing Experience
 │   ├── Pack A
 │   └── Pack B
 ├── Cinematic video layer
-│   ├── scene-1.webm
-│   ├── scene-2.webm
-│   ├── scene-3.webm
-│   └── scene-4.webm
+│   └── scenes-scroll.mp4
 └── DOM / UI
     ├── Glass cards
     ├── Headlines and descriptions
@@ -77,15 +74,17 @@ The reference resources are located in the project’s root `assets` directory:
 
 - `bg-video-16-9.webm`: looping ambient background.
 - The two pack GLB models.
-- `scene-1.webm`.
-- `scene-2.webm`.
-- `scene-3.webm`.
-- `scene-4.webm`.
+- `scenes-scroll.mp4`: scroll-scrubbed H.264 cinematic sequence derived from
+  the supplied `scenes.mp4` source.
 - The visual reference for the `glass-tilt-card` component.
 
 Confirm the actual GLB filenames during implementation. Do not infer them from Figma layer names.
 
-The four cinematic videos form one continuous sequence: the final frame of each `scene-N` visually matches the first frame of the next scene. The implementation must preserve this continuity when scrolling both forward and backward.
+The cinematic MP4 is one continuous sequence. Its authored pause frames are
+`04:06`, `10:05`, and `15:05` in seconds:frames notation at 30 fps. Its final
+frame visually matches the first frame of the ambient video. The implementation
+must preserve those holds and the final continuity when scrolling in either
+direction.
 
 ### Mandatory implementation preflight
 
@@ -94,7 +93,7 @@ Complete and record an asset preflight before building the experience:
 1. Inspect both GLBs and record their actual filenames, scene hierarchy, dimensions and scale, orientation, origins and pivots, mesh and material assignments, texture dependencies, transparency, and animation clips.
 2. Inspect every referenced texture for its path, dimensions, format and compression, color-space intent, alpha usage, and any missing or duplicate dependency.
 3. Inspect every video for container and codec, pixel dimensions, frame rate, duration, audio tracks, alpha-channel support, and keyframe interval or cadence. Confirm that the chosen browser targets can decode the files as required.
-4. Decode and compare the relevant first and last frames. Verify each intended `scene-1 → scene-2 → scene-3 → scene-4` matching-frame join rather than assuming continuity from filenames or Figma.
+4. Decode and verify the authored cinematic pause frames, then compare the final cinematic frame with the opening ambient frame rather than assuming continuity from filenames or Figma.
 5. Reflect the verified asset paths, durations, dimensions, and media constraints in `experienceConfig` and the implementation plan.
 
 Preflight is complete only when the findings are recorded and every asset-dependent assumption in the implementation is backed by the inspected files. Resolve or explicitly surface a blocking mismatch before implementing the affected transition.
@@ -103,8 +102,10 @@ Preflight is complete only when the findings are recorded and every asset-depend
 
 - The authoritative scroll controller owns the smooth-scroll integration, ScrollTrigger coordination, state boundaries, and progress mapping. Do not combine two smoothing systems or use `scroll-behavior: smooth` alongside Locomotive Scroll.
 - Integrate the chosen smooth-scroll solution with ScrollTrigger using the library’s recommended approach, without creating a second scroll authority.
+- Preserve continuous wheel, touch, and keyboard scrolling; narrative chapters
+  are progress ranges, not snap points or scripted navigation targets.
 - Map global scroll position to per-state normalized progress from `0` to `1`, then derive transforms, opacity, lighting, UI state, and `video.currentTime` from those values.
-- Cinematic videos are not independent autoplay videos: scroll controls their playback time.
+- The cinematic video is not an autoplay video: scroll controls its playback time.
 - Reverse scrolling must reconstruct earlier states without jumps, flashes, or irreversible flags.
 - Handle unavailable video metadata, fast seeks, abrupt direction changes, viewport resizing, and ScrollTrigger refreshes.
 - Treat Figma frames as visual state targets only. Determine scroll weights, distances, transition timing, easing, and scrub response during implementation and tuning; do not derive them from frame height or spacing in the Figma master.
@@ -158,42 +159,44 @@ As scrolling continues:
 
 Figma represents `Transition - 3.1` as the state in which the fusion already appears complete, the pulse has stopped, and the zoom is beginning.
 
-### State 05 — Maximum Zoom and 3D → `scene-1` Blend (`Transition - 3.2`)
+### State 05 — Maximum Zoom and 3D → Cinematic Blend (`Transition - 3.2`)
 
 When the pack reaches its maximum approach:
 
 - begin the crossfade;
 - reduce the 3D model from `100%` to `0%` presence;
-- increase `scene-1.webm` from `0%` to `100%`;
+- increase `scenes-scroll.mp4` from `0%` to `100%`;
 - overlap both layers long enough to conceal the change of medium.
 
 Do not expose black, an empty frame, or the ambient background between the two layers.
 
-### State 06 — Scroll-Controlled `scene-1` (`Transition - 3.3`)
+### State 06 — Scroll-Controlled Cinematic Opening (`Transition - 3.3`)
 
-Once `scene-1.webm` is at `100%` opacity, scroll progress controls its playback. Hold its final frame when the video reaches the end.
+Once `scenes-scroll.mp4` is at `100%` opacity, scroll progress controls its playback.
+Hold the first authored pause frame at `04:06` while the Classes content is
+visible.
 
-### Content 04 — Classes at the `scene-1 → scene-2` Join (`Section - 4`)
+### Content 04 — Classes at the First Cinematic Pause (`Section - 4`)
 
-The final frame of `scene-1` must match the first frame of `scene-2`. Over this stable visual state, reveal the left-aligned Classes glass card with the exact copy shown in Figma.
+At `04:06`, hold the cinematic frame and reveal the left-aligned Classes glass card with the exact copy shown in Figma.
 
-When scrolling resumes, remove the card and begin scrubbing `scene-2` without breaking the matching-frame transition.
+When scrolling resumes, remove the card and continue scrubbing the same video from `04:06`.
 
-### Content 05 — Rarities at the `scene-2 → scene-3` Join (`Section - 5`)
+### Content 05 — Rarities at the Second Cinematic Pause (`Section - 5`)
 
-When `scene-2` finishes, hold its final frame, display the matching first frame of `scene-3`, and reveal the right-aligned Rarities glass card with the exact copy shown in Figma.
+At `10:05`, hold the cinematic frame and reveal the right-aligned Rarities glass card with the exact copy shown in Figma.
 
-During the next scroll range, remove the card and advance `scene-3`.
+During the next scroll range, remove the card and continue the unified cinematic sequence.
 
-### Content 06 — Featured Artists at the `scene-3 → scene-4` Join (`Section - 6`)
+### Content 06 — Featured Artists at the Third Cinematic Pause (`Section - 6`)
 
-When `scene-3` finishes, hold the matching frame shared with `scene-4` and reveal the Featured Artists glass card using Figma’s centered composition and exact copy.
+At `15:05`, hold the cinematic frame and reveal the Featured Artists glass card using Figma’s centered composition and exact copy.
 
-As scrolling continues, remove the UI and begin scrubbing `scene-4`.
+As scrolling continues, remove the UI and scrub the final cinematic segment.
 
 ### State 07 — Return to the Ambient Background (`Section - 7`)
 
-At the final frame of `scene-4`:
+At the final frame of `scenes-scroll.mp4`, which matches the opening ambient frame:
 
 1. hold the frame;
 2. progressively reduce the cinematic layer’s opacity;
@@ -212,7 +215,9 @@ The initial loader must prevent the Hero from appearing before its critical reso
 - both GLBs and their critical textures and materials;
 - shaders required for the initial state.
 
-Do not wait for all four cinematic videos to download before revealing the Hero. Load them progressively and prepare each next scene before its transition point.
+Do not wait for the cinematic video to download before revealing the Hero.
+Preload its metadata initially and upgrade the same media element before its
+first transition point.
 
 The loader exit must be part of the narrative: complete its animation, reveal the background, then introduce the models and UI. Do not simply remove it abruptly with `display: none`.
 
@@ -251,10 +256,10 @@ Microinteractions must support the visual hierarchy rather than compete with the
 ### Video
 
 - Use `muted` and `playsInline`.
-- Reuse the same media resource for preload and playback so the application does not trigger duplicate full downloads. Do not give every scene maximum priority at startup.
-- Prepare the next scene before its transition point.
+- Reuse the same media resource for preload and playback so the application does not trigger duplicate full downloads. Do not give the cinematic sequence maximum priority at startup.
+- Prepare the unified cinematic resource before its first transition point.
 - Encode videos intended for scrubbing with sufficiently frequent keyframes for responsive seeking.
-- Do not insert fades to black between `scene-1`, `scene-2`, `scene-3`, and `scene-4`.
+- Hold the authored pause frames without inserting fades to black.
 - Avoid redundant seeks when the target time has barely changed.
 
 ### Runtime
@@ -325,11 +330,11 @@ The implementation is ready when:
 
 - the Hero appears only after its critical resources are loaded and is revealed through a polished transition;
 - composition and copy follow `Reference Design / Desktop - 16:9`;
-- the order is Hero → repositioning → Two Packs → First Drop Reveal → fusion/zoom → `scene-1` → Classes → `scene-2` → Rarities → `scene-3` → Featured Artists → `scene-4` → ambient return → CTA;
+- the order is Hero → repositioning → Two Packs → First Drop Reveal → fusion/zoom → cinematic opening → Classes → cinematic continuation → Rarities → cinematic continuation → Featured Artists → cinematic finale → ambient return → CTA;
 - the pulse begins during First Drop Reveal and stops at high brightness before the zoom;
-- the Three.js → `scene-1` blend conceals the change of medium;
-- the `scene-1 → 2 → 3 → 4` joins do not reveal black, empty frames, or the background between scenes;
-- the end of `scene-4` crossfades back to `bg-video-16-9.webm`;
+- the Three.js → cinematic blend conceals the change of medium;
+- the authored cinematic pauses do not reveal black, empty frames, or the background;
+- the end of `scenes-scroll.mp4` crossfades back to `bg-video-16-9.webm`;
 - forward, reverse, and fast scrolling maintain coherent states;
 - glass cards and CTAs provide subtle, accessible microinteractions;
 - the experience performs reliably across desktop and ultrawide viewports;

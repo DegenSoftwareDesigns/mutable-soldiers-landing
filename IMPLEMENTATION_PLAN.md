@@ -15,11 +15,12 @@ the verified media constraints.
 
 - One persistent fullscreen stage with ambient, WebGL, cinematic, UI and loader
   layers.
-- One Lenis smooth-scroll instance integrated with one GSAP ScrollTrigger.
+- One continuous Lenis smooth-scroll instance integrated with one GSAP
+  ScrollTrigger, without chapter snapping or input interception.
 - One normalized `0..1` progress source consumed by Three.js, video and UI.
 - One Three.js renderer and camera for both supplied GLBs.
-- Four persistent video elements whose time and opacity are derived from the
-  master progress.
+- One persistent cinematic video element whose time and opacity are derived
+  from the master progress, plus the independently looping ambient video.
 - Typed configuration for chapter boundaries, media metadata, pack motion,
   crossfades, loader and responsive tuning.
 - Scoped side effects with symmetrical cleanup and reduced-motion behavior.
@@ -30,7 +31,7 @@ the verified media constraints.
 
 - [x] Inspect Figma structure, exact copy and annotations.
 - [x] Verify Three.js and GSAP skill coverage.
-- [x] Inspect videos, GLBs, materials, textures and matching-frame joins.
+- [x] Inspect videos, GLBs, materials, textures and authored pause frames.
 - [x] Scaffold the portable Next.js application and diagnostics.
 
 ### M1 — Persistent experience and loader
@@ -44,12 +45,12 @@ the verified media constraints.
 
 - [x] Implement Hero, pack repositioning, Two Paths and First Drop states.
 - [x] Implement pack pulse, convergence, high glow and zoom.
-- [x] Crossfade ownership from WebGL to `scene-1`.
+- [x] Crossfade ownership from WebGL to the cinematic sequence.
 
 ### M3 — Cinematic sequence and content
 
-- [x] Implement frame-derived reversible scrubbing for all four scenes.
-- [x] Add Classes, Rarities and Featured Artists at their annotated joins.
+- [x] Implement frame-derived reversible scrubbing for the unified sequence.
+- [x] Add Classes, Rarities and Featured Artists at the authored pause frames.
 - [x] Return to the ambient background and packs for the final CTA.
 - [x] Exclude navbar and footer.
 
@@ -68,13 +69,13 @@ the verified media constraints.
 - [x] Record remaining visual or performance differences.
 
 Validation also covered a 1024 × 768 narrow-desktop viewport, keyboard focus,
-loader timeout behavior, one-canvas/one-controller ownership, five persistent
+loader timeout behavior, one-canvas/one-controller ownership, two persistent
 video elements, and the explicit absence of navbar and footer.
 
 ## Known constraints
 
-- The `scene-1 → scene-2` mismatch is documented in
-  `ASSET_PREFLIGHT.md` and handled with a short reversible crossfade.
+- The runtime uses a H.264 cinematic derivative with a 0.5-second keyframe
+  interval; the supplied 5-second AV1 source is retained for comparison.
 - The sandbox targets Next.js 14 for production portability. The current npm
   audit reports advisories in that framework/tooling line whose automated fix
   requires a breaking upgrade to Next.js 16. Do not deploy this sandbox as a
@@ -82,7 +83,6 @@ video elements, and the explicit absence of navbar and footer.
 
 ## Completion rule
 
-The sandbox is complete now that M5 passes. The known `scene-1 → scene-2`
-asset mismatch is not hidden: the implementation uses the best reversible
-crossfade possible with the supplied files and documents what would be needed
-for a literal matching-frame cut.
+The sandbox is complete now that M5 passes. The unified cinematic resource
+removes internal media joins; its authored pause frames and final ambient match
+are recorded in `ASSET_PREFLIGHT.md`.

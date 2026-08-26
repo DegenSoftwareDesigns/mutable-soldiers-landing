@@ -35,6 +35,7 @@ type PackObject = {
   lastOpacity: number | null;
   lastEmissiveIntensity: number | null;
   lastNeutralBlend: number | null;
+  lastRenderOrder: number | null;
 };
 
 type TintableMaterial =
@@ -42,12 +43,51 @@ type TintableMaterial =
   | THREE.MeshPhysicalMaterial
   | THREE.MeshPhongMaterial;
 
+type PackDragState = {
+  offset: THREE.Vector2;
+  targetOffset: THREE.Vector2;
+  tilt: THREE.Vector2;
+  targetTilt: THREE.Vector2;
+  energy: number;
+  targetEnergy: number;
+  dragging: boolean;
+};
+
+type ActivePackDrag = {
+  pointerId: number;
+  pack: PackObject;
+  state: PackDragState;
+  lastX: number;
+  lastY: number;
+  lastTime: number;
+};
+
 const violet = new THREE.Color(0x8b2cff);
 const cyan = new THREE.Color(0x18e8dd);
 const greenLightColor = new THREE.Color(0x39ffad);
 const purpleLightColor = new THREE.Color(0xa23cff);
 const fusionSilver = new THREE.Color(0x929eaa);
 const fusionSilverEmissive = new THREE.Color(0x465565);
+
+function createPackDragState(): PackDragState {
+  return {
+    offset: new THREE.Vector2(),
+    targetOffset: new THREE.Vector2(),
+    tilt: new THREE.Vector2(),
+    targetTilt: new THREE.Vector2(),
+    energy: 0,
+    targetEnergy: 0,
+    dragging: false,
+  };
+}
+
+function damp(current: number, target: number, damping: number, delta: number) {
+  return THREE.MathUtils.lerp(
+    current,
+    target,
+    1 - Math.exp(-damping * delta),
+  );
+}
 
 function createFallbackPack(color: THREE.Color): PackObject {
   const transform = new THREE.Group();
@@ -105,6 +145,7 @@ function createFallbackPack(color: THREE.Color): PackObject {
     lastOpacity: null,
     lastEmissiveIntensity: null,
     lastNeutralBlend: null,
+    lastRenderOrder: null,
   };
 }
 
@@ -197,6 +238,7 @@ async function loadPack(url: string, fallbackColor: THREE.Color) {
         lastOpacity: null,
         lastEmissiveIntensity: null,
         lastNeutralBlend: null,
+        lastRenderOrder: null,
       } satisfies PackObject,
       fallback: false,
       error: null,
@@ -230,10 +272,19 @@ function setOpacity(pack: PackObject, opacity: number) {
   });
 }
 
-function configurePackRendering(pack: PackObject, renderOrder: number) {
+function setPackRenderOrder(pack: PackObject, renderOrder: number) {
+  if (pack.lastRenderOrder === renderOrder) return;
+  pack.lastRenderOrder = renderOrder;
   pack.content.traverse((child) => {
     if (!(child instanceof THREE.Mesh)) return;
     child.renderOrder = renderOrder;
+  });
+}
+
+function configurePackRendering(pack: PackObject, renderOrder: number) {
+  setPackRenderOrder(pack, renderOrder);
+  pack.content.traverse((child) => {
+    if (!(child instanceof THREE.Mesh)) return;
     const materials = Array.isArray(child.material)
       ? child.material
       : [child.material];
@@ -280,13 +331,84 @@ function lerp(a: number, b: number, t: number) {
   return THREE.MathUtils.lerp(a, b, smoothstep(t));
 }
 
+function applyPackDrag(
+  pack: PackObject,
+  state: PackDragState,
+  delta: number,
+  heroActive: boolean,
+  reduceMotion: boolean,
+) {
+  if (!heroActive) {
+    state.dragging = false;
+    state.targetOffset.set(0, 0);
+    state.targetTilt.set(0, 0);
+    state.targetEnergy = 0;
+  }
+
+  const offsetDamping = state.dragging
+    ? packMotion.interaction.followDamping
+    : packMotion.interaction.returnDamping;
+  const tiltDamping = state.dragging
+    ? packMotion.interaction.tiltFollowDamping
+    : packMotion.interaction.tiltReturnDamping;
+  const energyDamping = state.targetEnergy > state.energy
+    ? packMotion.interaction.energyAttackDamping
+    : packMotion.interaction.energyReleaseDamping;
+
+  state.offset.x = damp(
+    state.offset.x,
+    state.targetOffset.x,
+    offsetDamping,
+    delta,
+  );
+  state.offset.y = damp(
+    state.offset.y,
+    state.targetOffset.y,
+    offsetDamping,
+    delta,
+  );
+  state.tilt.x = damp(state.tilt.x, state.targetTilt.x, tiltDamping, delta);
+  state.tilt.y = damp(state.tilt.y, state.targetTilt.y, tiltDamping, delta);
+  state.energy = damp(
+    state.energy,
+    state.targetEnergy,
+    energyDamping,
+    delta,
+  );
+
+  const gestureMemory = Math.exp(
+    -packMotion.interaction.gestureMemoryDamping * delta,
+  );
+  state.targetTilt.multiplyScalar(gestureMemory);
+  state.targetEnergy *= gestureMemory;
+
+  pack.transform.position.x += state.offset.x;
+  pack.transform.position.y += state.offset.y;
+  const tiltScale = reduceMotion
+    ? packMotion.interaction.reducedMotionTiltScale
+    : 1;
+  pack.transform.rotation.x += state.tilt.x * tiltScale;
+  pack.transform.rotation.z += state.tilt.y * tiltScale;
+  setEmissive(
+    pack,
+    (pack.lastEmissiveIntensity ?? packMotion.glow.base) +
+      state.energy * packMotion.interaction.emissiveBoost,
+  );
+}
+
 function updatePackState(
   packA: PackObject,
   packB: PackObject,
   progress: number,
   elapsed: number,
+  reduceMotion: boolean,
 ) {
   const reposition = rangeProgress(progress, packMotion.ranges.reposition);
+  const permutation = rangeProgress(progress, packMotion.ranges.permutation);
+  const depthHandoff = rangeProgress(
+    progress,
+    packMotion.ranges.depthHandoff,
+  );
   const fusion = rangeProgress(progress, packMotion.ranges.fusion);
   const zoom = rangeProgress(progress, packMotion.ranges.zoom);
   const finalReveal = rangeProgress(progress, packMotion.ranges.finalReveal);
@@ -294,6 +416,10 @@ function updatePackState(
     smoothstep(rangeProgress(progress, packMotion.ranges.pulseIn)) *
     (1 - smoothstep(rangeProgress(progress, packMotion.ranges.pulseOut)));
   const pulse = 0.5 + 0.5 * Math.sin(elapsed * packMotion.glow.pulseSpeed);
+
+  const permutationComplete = progress >= packMotion.ranges.permutation[1];
+  setPackRenderOrder(packA, permutationComplete ? 0 : 1);
+  setPackRenderOrder(packB, permutationComplete ? 1 : 0);
 
   if (progress >= packMotion.ranges.finalReveal[0]) {
     setNeutralBlend(packA, 0);
@@ -348,8 +474,10 @@ function updatePackState(
   const spreadBX = packMotion.spread.purpleX;
   const baseAX = lerp(heroAX, spreadAX, reposition);
   const baseBX = lerp(heroBX, spreadBX, reposition);
-  const aX = lerp(baseAX, 0, fusion);
-  const bX = lerp(baseBX, 0, fusion);
+  const permutedAX = lerp(baseAX, packMotion.permutation.greenX, permutation);
+  const permutedBX = lerp(baseBX, packMotion.permutation.purpleX, permutation);
+  const aX = lerp(permutedAX, 0, fusion);
+  const bX = lerp(permutedBX, 0, fusion);
   const earlyScale = lerp(
     packMotion.hero.scale,
     packMotion.spread.scale,
@@ -376,40 +504,65 @@ function updatePackState(
     Math.sin(elapsed * packMotion.presentation.purpleFloatSpeed + 2.6) *
     packMotion.presentation.floatZAmplitude *
     floatEnvelope;
+  const permutationArc = reduceMotion
+    ? 0
+    : Math.sin(Math.PI * smoothstep(permutation));
+  const greenBaseZ =
+    lerp(packMotion.hero.greenZ, packMotion.spread.greenZ, reposition) +
+    greenFloatZ;
+  const purpleBaseZ =
+    lerp(packMotion.hero.purpleZ, packMotion.spread.purpleZ, reposition) +
+    purpleFloatZ;
+  const greenPermutedZ = lerp(
+    greenBaseZ,
+    packMotion.permutation.greenZ,
+    depthHandoff,
+  );
+  const purplePermutedZ = lerp(
+    purpleBaseZ,
+    packMotion.permutation.purpleZ,
+    depthHandoff,
+  );
 
   packA.transform.position.set(
     aX,
-    lerp(packMotion.presentation.greenY + greenFloatY, 0, fusion),
     lerp(
-      lerp(packMotion.hero.greenZ, packMotion.spread.greenZ, reposition) +
-        greenFloatZ,
-      packMotion.fusion.greenZ,
+      packMotion.presentation.greenY +
+        greenFloatY +
+        permutationArc * packMotion.permutation.arcY,
+      0,
       fusion,
-    ) + lerp(0, packMotion.fusion.zoomZ, zoom),
+    ),
+    lerp(greenPermutedZ, packMotion.fusion.greenZ, fusion),
   );
   packB.transform.position.set(
     bX,
-    lerp(packMotion.presentation.purpleY + purpleFloatY, 0, fusion),
     lerp(
-      lerp(packMotion.hero.purpleZ, packMotion.spread.purpleZ, reposition) +
-        purpleFloatZ,
-      packMotion.fusion.purpleZ,
+      packMotion.presentation.purpleY +
+        purpleFloatY -
+        permutationArc * packMotion.permutation.arcY,
+      0,
       fusion,
     ),
+    lerp(purplePermutedZ, packMotion.fusion.purpleZ, fusion) +
+      lerp(0, packMotion.fusion.zoomZ, zoom),
   );
   const breathingScale =
     1 + pulseEnvelope * pulse * packMotion.glow.scaleAmplitude;
-  packA.transform.scale.setScalar(zoomScale * breathingScale);
-  packB.transform.scale.setScalar(
-    lerp(earlyScale, packMotion.fusion.scale, fusion) * breathingScale,
-  );
+  packA.transform.scale.setScalar(fusedScale * breathingScale);
+  packB.transform.scale.setScalar(zoomScale * breathingScale);
   packA.transform.rotation.set(
     packMotion.presentation.greenRotation[0],
     lerp(packMotion.presentation.greenRotation[1], 0, fusion) +
       Math.sin(elapsed * packMotion.presentation.greenHoverSpeed) *
         packMotion.presentation.hoverAmplitude *
         (1 - fusion),
-    lerp(packMotion.presentation.greenRotation[2], 0, fusion),
+    lerp(
+      packMotion.presentation.greenRotation[2] -
+        permutationArc * packMotion.permutation.roll,
+      0,
+      fusion,
+    ),
   );
   packB.transform.rotation.set(
     packMotion.presentation.purpleRotation[0],
@@ -417,7 +570,12 @@ function updatePackState(
       Math.sin(elapsed * packMotion.presentation.purpleHoverSpeed + 1.2) *
         packMotion.presentation.hoverAmplitude *
         (1 - fusion),
-    lerp(packMotion.presentation.purpleRotation[2], 0, fusion),
+    lerp(
+      packMotion.presentation.purpleRotation[2] +
+        permutationArc * packMotion.permutation.roll,
+      0,
+      fusion,
+    ),
   );
 
   const glowRamp = rangeProgress(progress, packMotion.ranges.fusion);
@@ -427,11 +585,11 @@ function updatePackState(
     glowRamp * packMotion.glow.fusionGain;
   setEmissive(packA, intensity);
   setEmissive(packB, intensity);
-  setOpacity(packA, 1);
   setOpacity(
-    packB,
-    1 - smoothstep(rangeProgress(progress, packMotion.ranges.purpleMergeFade)),
+    packA,
+    1 - smoothstep(rangeProgress(progress, packMotion.ranges.greenMergeFade)),
   );
+  setOpacity(packB, 1);
 }
 
 export function PackSceneCanvas({
@@ -451,6 +609,14 @@ export function PackSceneCanvas({
     let frame = 0;
     let packA: PackObject | null = null;
     let packB: PackObject | null = null;
+    const dragA = createPackDragState();
+    const dragB = createPackDragState();
+    let activeDrag: ActivePackDrag | null = null;
+    let lastHoverRaycast = 0;
+    const initialRootCursor = document.documentElement.style.cursor;
+    const reducedMotionQuery = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    );
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(
@@ -477,6 +643,167 @@ export function PackSceneCanvas({
     renderer.setClearColor(0x000000, 0);
     renderer.setPixelRatio(effectiveDpr);
     host.appendChild(renderer.domElement);
+
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+
+    const heroIsActive = () =>
+      progressSignal.get() <= packMotion.ranges.reposition[0];
+
+    const setPointerFromEvent = (event: PointerEvent) => {
+      const bounds = renderer.domElement.getBoundingClientRect();
+      if (
+        bounds.width <= 0 ||
+        bounds.height <= 0 ||
+        event.clientX < bounds.left ||
+        event.clientX > bounds.right ||
+        event.clientY < bounds.top ||
+        event.clientY > bounds.bottom
+      ) {
+        return false;
+      }
+      pointer.set(
+        ((event.clientX - bounds.left) / bounds.width) * 2 - 1,
+        -((event.clientY - bounds.top) / bounds.height) * 2 + 1,
+      );
+      raycaster.setFromCamera(pointer, camera);
+      return true;
+    };
+
+    const hitTestPack = (event: PointerEvent) => {
+      if (!packA || !packB || !heroIsActive() || !setPointerFromEvent(event)) {
+        return null;
+      }
+      const hitA = raycaster.intersectObject(packA.transform, true)[0];
+      const hitB = raycaster.intersectObject(packB.transform, true)[0];
+      if (!hitA && !hitB) return null;
+      if (!hitA) return { pack: packB, state: dragB };
+      if (!hitB) return { pack: packA, state: dragA };
+      return hitA.distance <= hitB.distance
+        ? { pack: packA, state: dragA }
+        : { pack: packB, state: dragB };
+    };
+
+    const restoreCursor = () => {
+      document.documentElement.style.cursor = initialRootCursor;
+    };
+
+    const finishDrag = () => {
+      if (!activeDrag) return;
+      activeDrag.state.dragging = false;
+      activeDrag.state.targetOffset.set(0, 0);
+      activeDrag.state.targetTilt.set(0, 0);
+      activeDrag.state.targetEnergy = 0;
+      activeDrag = null;
+      restoreCursor();
+    };
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (
+        activeDrag ||
+        event.button !== 0 ||
+        (event.pointerType !== "mouse" && event.pointerType !== "pen")
+      ) {
+        return;
+      }
+      const hit = hitTestPack(event);
+      if (!hit) return;
+      event.preventDefault();
+      hit.state.dragging = true;
+      hit.state.targetOffset.copy(hit.state.offset);
+      hit.state.targetTilt.set(0, 0);
+      activeDrag = {
+        pointerId: event.pointerId,
+        pack: hit.pack,
+        state: hit.state,
+        lastX: event.clientX,
+        lastY: event.clientY,
+        lastTime: event.timeStamp,
+      };
+      document.documentElement.style.cursor = "grabbing";
+    };
+
+    const onPointerMove = (event: PointerEvent) => {
+      if (!activeDrag) {
+        if (
+          event.pointerType !== "mouse" ||
+          event.timeStamp - lastHoverRaycast < 50
+        ) {
+          return;
+        }
+        lastHoverRaycast = event.timeStamp;
+        document.documentElement.style.cursor = hitTestPack(event)
+          ? "grab"
+          : initialRootCursor;
+        return;
+      }
+      if (event.pointerId !== activeDrag.pointerId) return;
+      event.preventDefault();
+      if (!heroIsActive()) {
+        finishDrag();
+        return;
+      }
+
+      const deltaX = event.clientX - activeDrag.lastX;
+      const deltaY = event.clientY - activeDrag.lastY;
+      const deltaSeconds = Math.max(
+        (event.timeStamp - activeDrag.lastTime) / 1000,
+        1 / 240,
+      );
+      const bounds = renderer.domElement.getBoundingClientRect();
+      const cameraDistance = Math.max(
+        0.1,
+        camera.position.z - activeDrag.pack.transform.position.z,
+      );
+      const worldHeight =
+        2 *
+        Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5)) *
+        cameraDistance;
+      const worldPerPixel = worldHeight / Math.max(bounds.height, 1);
+      activeDrag.state.targetOffset.x += deltaX * worldPerPixel;
+      activeDrag.state.targetOffset.y -= deltaY * worldPerPixel;
+      activeDrag.state.targetOffset.clampLength(
+        0,
+        packMotion.interaction.maxOffset,
+      );
+
+      const velocityX = deltaX / deltaSeconds;
+      const velocityY = deltaY / deltaSeconds;
+      const speed = Math.hypot(velocityX, velocityY);
+      const velocityScale = packMotion.interaction.speedForMaxGlow;
+      activeDrag.state.targetEnergy = Math.max(
+        activeDrag.state.targetEnergy,
+        Math.min(1, speed / velocityScale),
+      );
+      activeDrag.state.targetTilt.set(
+        THREE.MathUtils.clamp(
+          -velocityY / velocityScale,
+          -1,
+          1,
+        ) * packMotion.interaction.maxTiltX,
+        THREE.MathUtils.clamp(
+          -velocityX / velocityScale,
+          -1,
+          1,
+        ) * packMotion.interaction.maxTiltZ,
+      );
+      activeDrag.lastX = event.clientX;
+      activeDrag.lastY = event.clientY;
+      activeDrag.lastTime = event.timeStamp;
+    };
+
+    const onPointerUp = (event: PointerEvent) => {
+      if (event.pointerId === activeDrag?.pointerId) finishDrag();
+    };
+
+    window.addEventListener("pointerdown", onPointerDown, { capture: true });
+    window.addEventListener("pointermove", onPointerMove, {
+      capture: true,
+      passive: false,
+    });
+    window.addEventListener("pointerup", onPointerUp, { capture: true });
+    window.addEventListener("pointercancel", onPointerUp, { capture: true });
+    window.addEventListener("blur", finishDrag);
 
     const hemisphere = new THREE.HemisphereLight(
       0xbcc9ff,
@@ -557,9 +884,31 @@ export function PackSceneCanvas({
       const progress = progressSignal.get();
       if (document.hidden || !renderActive) return;
 
-      const elapsed = clock.getElapsedTime();
+      const delta = Math.min(clock.getDelta(), 1 / 30);
+      const elapsed = clock.elapsedTime;
       if (packA && packB) {
-        updatePackState(packA, packB, progress, elapsed);
+        updatePackState(
+          packA,
+          packB,
+          progress,
+          elapsed,
+          reducedMotionQuery.matches,
+        );
+        const heroActive = heroIsActive();
+        applyPackDrag(
+          packA,
+          dragA,
+          delta,
+          heroActive,
+          reducedMotionQuery.matches,
+        );
+        applyPackDrag(
+          packB,
+          dragB,
+          delta,
+          heroActive,
+          reducedMotionQuery.matches,
+        );
         const fusionProgress =
           progress < packMotion.ranges.zoom[1]
             ? smoothstep(
@@ -570,10 +919,12 @@ export function PackSceneCanvas({
           experienceTuning.lighting.exposure * (1 + fusionProgress * 0.04);
         greenAccent.intensity =
           experienceTuning.lighting.greenAccentIntensity *
-          (1 - fusionProgress * 0.82);
+            (1 - fusionProgress * 0.82) +
+          dragA.energy * packMotion.interaction.accentLightBoost;
         purpleAccent.intensity =
           experienceTuning.lighting.purpleAccentIntensity *
-          (1 - fusionProgress * 0.82);
+            (1 - fusionProgress * 0.82) +
+          dragB.energy * packMotion.interaction.accentLightBoost;
         silverFusionLight.intensity =
           experienceTuning.lighting.fusionSilverIntensity * fusionProgress;
         greenAccent.position.copy(packA.transform.position);
@@ -605,6 +956,7 @@ export function PackSceneCanvas({
     };
 
     const syncRenderActivity = (progress: number) => {
+      if (progress > packMotion.ranges.reposition[0]) finishDrag();
       const nextRenderActive = isRenderActive(progress);
       if (nextRenderActive === renderActive) return;
       renderActive = nextRenderActive;
@@ -651,6 +1003,18 @@ export function PackSceneCanvas({
       stopRendering();
       unsubscribeProgress();
       document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pointerdown", onPointerDown, {
+        capture: true,
+      });
+      window.removeEventListener("pointermove", onPointerMove, {
+        capture: true,
+      });
+      window.removeEventListener("pointerup", onPointerUp, { capture: true });
+      window.removeEventListener("pointercancel", onPointerUp, {
+        capture: true,
+      });
+      window.removeEventListener("blur", finishDrag);
+      restoreCursor();
       resizeObserver.disconnect();
       if (packA) disposeObject(packA.transform);
       if (packB) disposeObject(packB.transform);
