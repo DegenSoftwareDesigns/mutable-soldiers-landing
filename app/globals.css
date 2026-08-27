@@ -309,9 +309,13 @@ button {
 .glass-card p:not(.story-number):not(.hero-collection) {
   max-width: 72ch;
   margin-top: 1.2rem;
-  color: var(--muted);
-  font-size: clamp(0.82rem, 1vw, 1.05rem);
-  line-height: 1.5;
+  color: rgba(247, 246, 255, 0.92);
+  font-family: var(--body-font);
+  font-size: clamp(1rem, 1.08vw, 1.12rem);
+  font-weight: 600;
+  line-height: 1.55;
+  letter-spacing: 0.012em;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.58);
 }
 
 .glass-card--hero .glass-card__content {

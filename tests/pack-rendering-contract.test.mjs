@@ -132,6 +132,24 @@ test("GSAP's smoothed playhead is the single progress clock", async () => {
   );
 });
 
+test("story cards emerge from depth with a two-axis roll", async () => {
+  const [source, configSource] = await Promise.all([
+    readFile(experiencePath, "utf8"),
+    readFile(configPath, "utf8"),
+  ]);
+
+  assert.match(configSource, /enterZ:\s*-620/);
+  assert.match(configSource, /enterScale:\s*0\.72/);
+  assert.match(configSource, /enterRotationX:\s*68/);
+  assert.match(configSource, /enterRotationY:\s*28/);
+  assert.match(source, /yawDirection:\s*-1\s*\|\s*1/);
+  assert.match(
+    source,
+    /uiMotion\.enterRotationY\s*\*\s*yawDirection/,
+    "the secondary axis must mirror the card's authored entry direction",
+  );
+});
+
 test("the canvas layer owns the WebGL-to-video crossfade", async () => {
   const source = await readFile(packScenePath, "utf8");
 

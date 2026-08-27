@@ -194,11 +194,11 @@ export const packMotion = {
 } as const;
 
 export const uiMotion = {
-  enterY: 26,
-  enterZ: -460,
-  enterScale: 0.78,
-  enterRotationX: 11,
-  enterRotationY: -7,
+  enterY: 38,
+  enterZ: -620,
+  enterScale: 0.72,
+  enterRotationX: 68,
+  enterRotationY: 28,
   exitY: -18,
   exitZ: 520,
   exitScale: 1.22,

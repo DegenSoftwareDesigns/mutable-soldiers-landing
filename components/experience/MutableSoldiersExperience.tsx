@@ -336,7 +336,12 @@ export function MutableSoldiersExperience() {
           const timeline = gsap.timeline({ defaults: { ease: "none" } });
           timeline.to(driver, { progress: 1, duration: 1 }, 0);
 
-          const reveal = (selector: string, start: number, end: number) => {
+          const reveal = (
+            selector: string,
+            start: number,
+            end: number,
+            yawDirection: -1 | 1,
+          ) => {
             timeline.fromTo(
               selector,
               {
@@ -345,7 +350,9 @@ export function MutableSoldiersExperience() {
                 z: reduceMotion ? 0 : uiMotion.enterZ,
                 scale: reduceMotion ? 1 : uiMotion.enterScale,
                 rotationX: reduceMotion ? 0 : uiMotion.enterRotationX,
-                rotationY: reduceMotion ? 0 : uiMotion.enterRotationY,
+                rotationY: reduceMotion
+                  ? 0
+                  : uiMotion.enterRotationY * yawDirection,
               },
               {
                 autoAlpha: 1,
@@ -392,26 +399,32 @@ export function MutableSoldiersExperience() {
           reveal(
             '[data-card="two-paths"] [data-card-motion]',
             ...uiWindows.twoPaths,
+            -1,
           );
           reveal(
             '[data-card="first-drop"] [data-card-motion]',
             ...uiWindows.firstDrop,
+            1,
           );
           reveal(
             '[data-card="classes"] [data-card-motion]',
             ...uiWindows.classes,
+            1,
           );
           reveal(
             '[data-card="rarities"] [data-card-motion]',
             ...uiWindows.rarities,
+            -1,
           );
           reveal(
             '[data-card="artists"] [data-card-motion]',
             ...uiWindows.artists,
+            1,
           );
           reveal(
             '[data-card="final"] [data-card-motion]',
             ...uiWindows.final,
+            -1,
           );
 
           timeline.to(
