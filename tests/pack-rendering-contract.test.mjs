@@ -18,6 +18,11 @@ const mediaLayersPath = new URL(
   "../components/experience/MediaLayers.tsx",
   import.meta.url,
 );
+const navbarPath = new URL(
+  "../components/experience/SiteNavbar.tsx",
+  import.meta.url,
+);
+const globalStylesPath = new URL("../app/globals.css", import.meta.url);
 
 test("pack fades keep a stable Three.js render mode", async () => {
   const source = await readFile(packScenePath, "utf8");
@@ -171,16 +176,16 @@ test("one cinematic element scrubs the unified video across authored stops", asy
     readFile(mediaLayersPath, "utf8"),
   ]);
 
-  assert.match(assetsSource, /src:\s*"\/assets\/scenes-scroll\.mp4"/);
+  assert.match(assetsSource, /src:\s*"\/assets\/scenes-h264-scroll\.mp4"/);
   assert.doesNotMatch(assetsSource, /scene-[1-4]-web\.webm/);
   assert.equal(
     Array.from(mediaSource.matchAll(/<video\b/g)).length,
     2,
     "the experience must render only the ambient and unified cinematic videos",
   );
-  assert.match(configSource, /timeAtFrame\(4, 6\)/);
-  assert.match(configSource, /timeAtFrame\(10, 5\)/);
-  assert.match(configSource, /timeAtFrame\(15, 5\)/);
+  assert.match(configSource, /timeRange:\s*\[0, 2\]/);
+  assert.match(configSource, /timeRange:\s*\[2, 4\]/);
+  assert.match(configSource, /timeAtFrame\(6, 22\)/);
   assert.match(mediaSource, /cinematicTimeForProgress\(progress\)/);
 });
 
@@ -204,5 +209,50 @@ test("native wheel progress is not replaced by chapter navigation", async () => 
     configSource,
     /assistedScrollAnchors|assistedScroll:/,
     "chapter navigation configuration must not survive as dead code",
+  );
+});
+
+test("the floating glass navbar keeps its authored navigation contract", async () => {
+  const [navbarSource, experienceSource, stylesSource] = await Promise.all([
+    readFile(navbarPath, "utf8"),
+    readFile(experiencePath, "utf8"),
+    readFile(globalStylesPath, "utf8"),
+  ]);
+
+  assert.match(navbarSource, /<GlassTiltCard/);
+  assert.match(navbarSource, /href="#hero"/);
+  assert.match(navbarSource, /\["Waitlist", "Artists", "Drops"\]/);
+  assert.match(navbarSource, /<CTAButton>Connect Wallet<\/CTAButton>/);
+  assert.match(navbarSource, /disabled/);
+  assert.match(experienceSource, /<main id="hero"/);
+  assert.match(experienceSource, /<SiteNavbar \/>/);
+  assert.match(
+    stylesSource,
+    /\.site-navbar-shell\s*{[^}]*position:\s*sticky;[^}]*top:\s*2rem;/s,
+  );
+});
+
+test("the hero card stays inside the same wide-screen shell as the navbar", async () => {
+  const stylesSource = await readFile(globalStylesPath, "utf8");
+
+  assert.match(
+    stylesSource,
+    /:root\s*{[^}]*--experience-shell-max:/s,
+    "wide-screen alignment needs one shared shell maximum",
+  );
+  assert.match(
+    stylesSource,
+    /\.site-navbar-shell\s*{[^}]*width:[^;]*var\(--experience-shell-max\)/s,
+    "the navbar must use the shared shell",
+  );
+  assert.match(
+    stylesSource,
+    /\.story-card--hero\s*{[^}]*left:[^;]*var\(--experience-shell-max\)/s,
+    "the hero must stop drifting outside the navbar on wide screens",
+  );
+  assert.doesNotMatch(
+    stylesSource,
+    /\.story-card--hero\s*{[^}]*min-width:\s*34rem/s,
+    "a fixed 34rem minimum creates empty horizontal space in the hero card",
   );
 });

@@ -41,7 +41,7 @@ export const experienceAssets: readonly ExperienceAsset[] = [
   {
     key: "cinematic",
     kind: "video",
-    src: "/assets/scenes-scroll.mp4",
+    src: "/assets/scenes-h264-scroll.mp4",
     critical: false,
     label: "Cinematic sequence",
   },

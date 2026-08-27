@@ -17,6 +17,7 @@ import {
   type CinematicVideoStatus,
 } from "./MediaLayers";
 import { PackSceneCanvas, type PackSceneReady } from "./PackSceneCanvas";
+import { SiteNavbar } from "./SiteNavbar";
 import { useSmoothScroll } from "./useSmoothScroll";
 import {
   currentChapter,
@@ -131,12 +132,12 @@ function StoryCards({
       <StoryCardShell name="two-paths" className="story-card--center">
         <GlassCard>
           <h2>
-            <span>Two Packs.</span>
-            <span>Two Paths.</span>
+            <span>Two packs,</span>
+            <span>Two paths</span>
           </h2>
           <p>
-            Cada pack contiene sus propias clases únicas en colaboracion con distintos
-            artistas de NFTs.
+            Different classes. Countless combinations. A unique path shaped with every
+            drop.
           </p>
         </GlassCard>
       </StoryCardShell>
@@ -506,8 +507,9 @@ export function MutableSoldiersExperience() {
   const loaderProgress = Math.round((criticalReadyCount / 3) * 100);
 
   return (
-    <main className="experience-scroll" ref={scrollRef} style={style}>
+    <main id="hero" className="experience-scroll" ref={scrollRef} style={style}>
       <div className="experience-stage" ref={stageRef}>
+        <SiteNavbar />
         <AmbientVideo
           progressSignal={progressSignal}
           onSettled={onAmbientSettled}

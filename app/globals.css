@@ -11,6 +11,7 @@
   --glass-border: rgba(255, 255, 255, 0.24);
   --violet: #8c3cff;
   --cyan: #24ebe0;
+  --experience-shell-max: 112rem;
   --display-font: "Audiowide", "Eurostile", "Bank Gothic", system-ui, sans-serif;
   --body-font: "Rajdhani", ui-sans-serif, system-ui, sans-serif;
 }
@@ -191,6 +192,154 @@ button {
   perspective-origin: 50% 50%;
 }
 
+.site-navbar-shell {
+  position: sticky;
+  top: 2rem;
+  z-index: 9;
+  width: min(calc(100% - 4rem), var(--experience-shell-max));
+  margin-inline: auto;
+  pointer-events: none;
+}
+
+.site-navbar-glass {
+  --glass-radius: 1.35rem;
+  pointer-events: auto;
+}
+
+.site-navbar-surface {
+  animation: none !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  box-shadow:
+    inset 1.5px 1.5px 0 rgba(255, 255, 255, 0.32),
+    inset -1.5px -1.5px 1px rgba(0, 0, 0, 0.35),
+    inset 0 0 34px rgba(255, 255, 255, 0.045),
+    0 16px 42px rgba(0, 0, 0, 0.38),
+    0 0 2.25rem rgba(132, 64, 255, 0.08) !important;
+  transform: none !important;
+}
+
+.site-navbar-inner {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem;
+  min-height: 4.25rem;
+  padding: 0.5rem 0.55rem 0.5rem 1rem;
+}
+
+.site-navbar-brand {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 0.7rem;
+  min-height: 2.75rem;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.site-navbar-brand__mark {
+  display: grid;
+  width: 2.55rem;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.16), transparent 46%),
+    rgba(6, 5, 15, 0.54);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.2),
+    0 0 1.5rem rgba(132, 52, 255, 0.2);
+  font-family: var(--display-font);
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+}
+
+.site-navbar-brand__name {
+  font-family: var(--display-font);
+  font-size: 0.7rem;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.site-navbar-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  justify-self: center;
+  padding: 0.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  background: rgba(2, 3, 10, 0.2);
+}
+
+.site-navbar-link {
+  display: inline-grid;
+  min-height: 2.4rem;
+  padding: 0.55rem 0.8rem;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  color: rgba(247, 246, 255, 0.72);
+  cursor: pointer;
+  background: transparent;
+  font-family: var(--body-font);
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.055em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition:
+    color 120ms ease-out,
+    background-color 120ms ease-out,
+    box-shadow 120ms ease-out,
+    transform 120ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.site-navbar-link.is-active {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.075);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.13),
+    0 0 1rem rgba(132, 64, 255, 0.09);
+}
+
+.site-navbar-link:disabled {
+  color: rgba(247, 246, 255, 0.46);
+  cursor: default;
+}
+
+.site-navbar-link:not(:disabled):hover,
+.site-navbar-brand:hover {
+  color: #fff;
+}
+
+.site-navbar-link:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+.site-navbar-link:focus-visible,
+.site-navbar-brand:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
+}
+
+.site-navbar-wallet {
+  justify-self: end;
+}
+
+.site-navbar-wallet .cta-button {
+  min-height: 2.75rem;
+  padding: 0.68rem 1.1rem;
+  white-space: nowrap;
+}
+
 .story-card {
   position: absolute;
   display: flex;
@@ -215,9 +364,11 @@ button {
 
 .story-card--hero {
   top: 50%;
-  left: clamp(2rem, 7.7vw, 9.25rem);
-  width: min(40.3vw, 48rem);
-  min-width: 34rem;
+  left: max(
+    clamp(2rem, 7.7vw, 9.25rem),
+    calc((100vw - var(--experience-shell-max)) / 2)
+  );
+  width: clamp(32rem, 36vw, 42rem);
   transform: translateY(-50%);
 }
 
@@ -234,14 +385,20 @@ button {
 
 .story-card--left {
   top: 50%;
-  left: clamp(2rem, 13vw, 16rem);
+  left: max(
+    clamp(2rem, 13vw, 16rem),
+    calc((100vw - var(--experience-shell-max)) / 2)
+  );
   width: min(34vw, 41rem);
   transform: translateY(-50%);
 }
 
 .story-card--right {
   top: 50%;
-  right: clamp(2rem, 7vw, 8.5rem);
+  right: max(
+    clamp(2rem, 7vw, 8.5rem),
+    calc((100vw - var(--experience-shell-max)) / 2)
+  );
   width: min(45vw, 54rem);
   transform: translateY(-50%);
 }
@@ -333,7 +490,7 @@ button {
   letter-spacing: 0.02em;
 }
 
-.glass-card--wide h2 {
+.story-card--center h2 {
   text-align: center;
 }
 
@@ -592,17 +749,17 @@ button {
 
 @media (min-aspect-ratio: 2/1) {
   .story-card--hero {
-    left: 9vw;
-    width: min(34vw, 48rem);
+    left: max(9vw, calc((100vw - var(--experience-shell-max)) / 2));
+    width: clamp(32rem, 34vw, 42rem);
   }
 
   .story-card--left {
-    left: 12vw;
+    left: max(12vw, calc((100vw - var(--experience-shell-max)) / 2));
     width: min(30vw, 41rem);
   }
 
   .story-card--right {
-    right: 10vw;
+    right: max(10vw, calc((100vw - var(--experience-shell-max)) / 2));
     width: min(38vw, 54rem);
   }
 
@@ -627,6 +784,51 @@ button {
   .story-card--artists,
   .story-card--final {
     width: min(88vw, 46rem);
+  }
+}
+
+@media (max-width: 760px) {
+  .site-navbar-shell {
+    width: calc(100% - 2rem);
+  }
+
+  .site-navbar-inner {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.4rem 0.75rem;
+    padding: 0.55rem;
+  }
+
+  .site-navbar-brand {
+    min-height: 2.75rem;
+  }
+
+  .site-navbar-nav {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .site-navbar-link {
+    min-width: 0;
+    min-height: 2.75rem;
+    padding-inline: clamp(0.45rem, 3vw, 0.8rem);
+  }
+}
+
+@media (max-width: 440px) {
+  .site-navbar-brand__name {
+    display: none;
+  }
+
+  .site-navbar-wallet .cta-button {
+    padding-inline: 0.9rem;
+    font-size: 0.78rem;
+  }
+
+  .site-navbar-link {
+    font-size: 0.72rem;
+    letter-spacing: 0.035em;
   }
 }
 
