@@ -187,7 +187,6 @@ export function GlassTiltCard({
         <div className={styles.glassTint2} />
         {children && <div className={styles.content}>{children}</div>}
         <div className={styles.specular} />
-        <div className={styles.glint} />
         <div className={styles.chromatic} />
         <div className={styles.edge} />
       </div>
