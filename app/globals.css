@@ -337,7 +337,7 @@ button {
   text-align: center;
 }
 
-.glass-card--wide > .glass-card__content > p {
+.story-card--center .glass-card__content > p {
   text-align: center;
   margin-inline: auto;
 }
