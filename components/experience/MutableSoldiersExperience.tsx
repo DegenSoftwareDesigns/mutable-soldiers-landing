@@ -10,6 +10,10 @@ import {
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
+import {
+  TiltCard,
+  TiltCardItem,
+} from "@/components/spectrumui/tilt-card";
 import { GlassCard, CTAButton } from "./GlassCard";
 import {
   AmbientVideo,
@@ -118,17 +122,33 @@ function StoryCards({
   return (
     <div className="story-overlay" data-layer="ui" ref={overlayRef}>
       <StoryCardShell name="hero" className="story-card--hero">
-        <GlassCard className="glass-card--hero">
-          <h1>
-            <span>MUTABLE</span>
-            <span>SOLDIERS</span>
-          </h1>
-          <p className="hero-collection">COLLECTION</p>
-          <div className="cta-row">
-            <CTAButton>Join the Waitlist</CTAButton>
-            <CTAButton variant="secondary">View Collection</CTAButton>
+        <TiltCard
+          containerClassName="spectrum-hero-card-stage"
+          className="glass-card glass-card--hero spectrum-hero-card"
+          maxTilt={12}
+          scale={1.02}
+          perspective={1000}
+          glareColor="rgba(164, 115, 255, 0.28)"
+        >
+          <div aria-hidden="true" className="spectrum-hero-card__surface" />
+          <div className="glass-card__content spectrum-hero-card__content">
+            <TiltCardItem depth={96}>
+              <h1>
+                <span>MUTABLE</span>
+                <span>SOLDIERS</span>
+              </h1>
+            </TiltCardItem>
+            <TiltCardItem depth={68}>
+              <p className="hero-collection">COLLECTION</p>
+            </TiltCardItem>
+            <TiltCardItem depth={48}>
+              <div className="cta-row">
+                <CTAButton>Join the Waitlist</CTAButton>
+                <CTAButton variant="secondary">View Collection</CTAButton>
+              </div>
+            </TiltCardItem>
           </div>
-        </GlassCard>
+        </TiltCard>
       </StoryCardShell>
 
       <StoryCardShell name="two-paths" className="story-card--center">

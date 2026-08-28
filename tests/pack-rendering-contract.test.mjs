@@ -26,6 +26,15 @@ const footerPath = new URL(
   "../components/experience/SiteFooter.tsx",
   import.meta.url,
 );
+const waitlistPagePath = new URL("../app/waitlist/page.tsx", import.meta.url);
+const waitlistLookupPath = new URL(
+  "../components/waitlist/WaitlistLookup.tsx",
+  import.meta.url,
+);
+const tiltCardPath = new URL(
+  "../components/spectrumui/tilt-card.tsx",
+  import.meta.url,
+);
 const globalStylesPath = new URL("../app/globals.css", import.meta.url);
 
 test("pack fades keep a stable Three.js render mode", async () => {
@@ -230,8 +239,9 @@ test("the floating glass navbar keeps its authored navigation contract", async (
   assert.match(navbarSource, /<GlassTiltCard/);
   assert.match(navbarSource, /src="\/assets\/Logo-navbar\.svg"/);
   assert.doesNotMatch(navbarSource, />\s*MS\s*</);
-  assert.match(navbarSource, /href="#hero"/);
-  assert.match(navbarSource, /\["Waitlist", "Artists", "Drops"\]/);
+  assert.match(navbarSource, /href="\/#hero"/);
+  assert.match(navbarSource, /href="\/waitlist"/);
+  assert.match(navbarSource, /\["Artists", "Drops"\]/);
   assert.match(navbarSource, /<CTAButton>Connect Wallet<\/CTAButton>/);
   assert.match(navbarSource, /disabled/);
   assert.match(experienceSource, /<main id="hero"/);
@@ -243,8 +253,51 @@ test("the floating glass navbar keeps its authored navigation contract", async (
 });
 
 test("the hero card stays inside the same wide-screen shell as the navbar", async () => {
-  const stylesSource = await readFile(globalStylesPath, "utf8");
+  const [experienceSource, stylesSource, tiltCardSource] = await Promise.all([
+    readFile(experiencePath, "utf8"),
+    readFile(globalStylesPath, "utf8"),
+    readFile(tiltCardPath, "utf8"),
+  ]);
 
+  assert.match(experienceSource, /from "@\/components\/spectrumui\/tilt-card"/);
+  assert.match(experienceSource, /<TiltCard[\s\S]*maxTilt=\{12\}/);
+  assert.match(experienceSource, /<TiltCardItem depth=\{96\}>/);
+  assert.match(experienceSource, /<TiltCardItem depth=\{68\}>/);
+  assert.match(experienceSource, /<TiltCardItem depth=\{48\}>/);
+  assert.match(
+    tiltCardSource,
+    /data-tilt-hovered/,
+    "the moving 3D card must resynchronise interactive hover targets",
+  );
+  assert.match(
+    stylesSource,
+    /\.cta-button\[data-tilt-hovered="true"\]/,
+    "CTA visuals must respond to the tilt card's synchronised hover state",
+  );
+  assert.match(
+    experienceSource,
+    /className="spectrum-hero-card__surface"/,
+    "the glass surface must be a separate layer so it cannot flatten the lifted content",
+  );
+  assert.doesNotMatch(
+    experienceSource,
+    /StoryCardShell name="hero"[\s\S]*?<GlassCard className="glass-card--hero">/,
+  );
+  assert.match(
+    stylesSource,
+    /\.story-card \.spectrum-hero-card-stage\s*{[^}]*pointer-events:\s*auto;/s,
+    "the Spectrum tilt wrapper must receive pointer events inside the inert story overlay",
+  );
+  assert.doesNotMatch(
+    stylesSource,
+    /\.spectrum-hero-card\s*{[^}]*(?:overflow:\s*hidden|isolation:\s*isolate|backdrop-filter:)/s,
+    "grouping properties on the rotating card would flatten its 3D descendants",
+  );
+  assert.match(
+    stylesSource,
+    /\.spectrum-hero-card__surface\s*{[^}]*overflow:\s*hidden;[^}]*backdrop-filter:/s,
+    "clipping and backdrop blur belong on a separate visual surface",
+  );
   assert.match(
     stylesSource,
     /:root\s*{[^}]*--experience-shell-max:/s,
@@ -276,8 +329,9 @@ test("the final scene includes a responsive glass footer on the shared shell", a
 
   assert.match(footerSource, /<GlassTiltCard/);
   assert.match(footerSource, /src="\/assets\/Logo\.svg"/);
-  assert.match(footerSource, /href="#hero"/);
-  assert.match(footerSource, /\["Waitlist", "Artists", "Drops"\]/);
+  assert.match(footerSource, /href="\/#hero"/);
+  assert.match(footerSource, /href="\/waitlist"/);
+  assert.match(footerSource, /\["Artists", "Drops"\]/);
   assert.match(footerSource, /\["Army X", "Telegram", "xrp\.cafe"\]/);
   assert.match(footerSource, /disabled/);
   assert.match(experienceSource, /footer:\s*uiWindows\.final/);
@@ -322,5 +376,41 @@ test("the final scene includes a responsive glass footer on the shared shell", a
   assert.match(
     stylesSource,
     /\.glass-card--flat-surface\s*{[^}]*transform:\s*none\s*!important;/s,
+  );
+});
+
+test("the waitlist route reuses the landing system for an accessible XRPL lookup", async () => {
+  const [pageSource, lookupSource, stylesSource] = await Promise.all([
+    readFile(waitlistPagePath, "utf8"),
+    readFile(waitlistLookupPath, "utf8"),
+    readFile(globalStylesPath, "utf8"),
+  ]);
+
+  assert.match(pageSource, /assetByKey\.ambient\.src/);
+  assert.match(pageSource, /<SiteNavbar \/>/);
+  assert.match(pageSource, /<SiteFooter placement="page" \/>/);
+  assert.match(pageSource, /<WaitlistLookup \/>/);
+  assert.match(lookupSource, /<GlassCard className="waitlist-check-card" flat>/);
+  assert.match(lookupSource, /type="text"/);
+  assert.match(lookupSource, /aria-invalid=/);
+  assert.match(lookupSource, /aria-live="polite"/);
+  assert.match(lookupSource, />Submit</);
+  assert.doesNotMatch(lookupSource, /XRPL ACCESS CHECK/);
+  assert.match(
+    lookupSource,
+    /Submitting your wallet address will not connect it\./,
+  );
+  assert.match(lookupSource, /\^r\[1-9A-HJ-NP-Za-km-z\]/);
+  assert.match(
+    stylesSource,
+    /\.waitlist-check-card\s*{[^}]*width:[^;]*var\(--experience-shell-max\)/s,
+  );
+  assert.match(
+    stylesSource,
+    /\.waitlist-form__controls\s*{[^}]*grid-template-columns:\s*minmax\(0, 1fr\) auto;/s,
+  );
+  assert.match(
+    stylesSource,
+    /@media \(max-width: 760px\)[\s\S]*\.waitlist-form__controls\s*{[^}]*grid-template-columns:\s*1fr;/s,
   );
 });

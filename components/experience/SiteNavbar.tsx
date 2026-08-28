@@ -1,12 +1,18 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { GlassTiltCard } from "@/assets/glass-tilt-card";
 import { CTAButton } from "./GlassCard";
 
-const pendingPages = ["Waitlist", "Artists", "Drops"] as const;
+const pendingPages = ["Artists", "Drops"] as const;
 
 export function SiteNavbar() {
+  const pathname = usePathname();
+  const homeIsActive = pathname === "/";
+  const waitlistIsActive = pathname === "/waitlist";
+
   return (
     <header className="site-navbar-shell">
       <GlassTiltCard
@@ -17,7 +23,7 @@ export function SiteNavbar() {
         interactive={false}
       >
         <div className="site-navbar-inner">
-          <a className="site-navbar-brand" href="#hero" aria-label="Mutable Soldiers home">
+          <Link className="site-navbar-brand" href="/#hero" aria-label="Mutable Soldiers home">
             <Image
               className="site-navbar-brand__logo"
               src="/assets/Logo-navbar.svg"
@@ -26,12 +32,23 @@ export function SiteNavbar() {
               alt=""
               priority
             />
-          </a>
+          </Link>
 
           <nav className="site-navbar-nav" aria-label="Primary navigation">
-            <a className="site-navbar-link is-active" href="#hero" aria-current="page">
+            <Link
+              className={`site-navbar-link ${homeIsActive ? "is-active" : ""}`}
+              href="/#hero"
+              aria-current={homeIsActive ? "page" : undefined}
+            >
               Home
-            </a>
+            </Link>
+            <Link
+              className={`site-navbar-link ${waitlistIsActive ? "is-active" : ""}`}
+              href="/waitlist"
+              aria-current={waitlistIsActive ? "page" : undefined}
+            >
+              Waitlist
+            </Link>
             {pendingPages.map((page) => (
               <button
                 className="site-navbar-link"

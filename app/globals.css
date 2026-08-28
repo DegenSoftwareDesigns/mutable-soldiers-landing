@@ -464,6 +464,10 @@ button {
   pointer-events: auto;
 }
 
+.story-card .spectrum-hero-card-stage {
+  pointer-events: auto;
+}
+
 .story-card--hero {
   top: 50%;
   left: max(
@@ -595,6 +599,63 @@ button {
   font-size: clamp(3rem, 5.1vw, 6.1rem);
 }
 
+.spectrum-hero-card-stage {
+  width: 100%;
+}
+
+.spectrum-hero-card {
+  --glass-radius: clamp(1.75rem, 2.6vw, 3.125rem);
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--glass-radius);
+  color: var(--text);
+  background: transparent;
+  box-shadow:
+    inset 1.5px 1.5px 1px rgba(255, 255, 255, 0.24),
+    inset -1.5px -1.5px 2px rgba(0, 0, 0, 0.46),
+    inset 0 0 46px rgba(255, 255, 255, 0.035),
+    0 22px 52px rgba(0, 0, 0, 0.5),
+    0 0 2rem rgba(132, 64, 255, 0.08);
+}
+
+.spectrum-hero-card__surface {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.1) 0%,
+      rgba(8, 9, 18, 0.22) 32%,
+      rgba(6, 7, 16, 0.5) 70%,
+      rgba(3, 4, 11, 0.72) 100%
+    ),
+    rgba(20, 18, 31, 0.54);
+  backdrop-filter: blur(clamp(36px, 3vw, 46px)) saturate(106%) brightness(0.92);
+  -webkit-backdrop-filter: blur(clamp(36px, 3vw, 46px)) saturate(106%) brightness(0.92);
+}
+
+.spectrum-hero-card__surface::before {
+  position: absolute;
+  z-index: 0;
+  inset: 3px 2px;
+  border-radius: inherit;
+  content: "";
+  pointer-events: none;
+  background: rgba(4, 5, 12, 0.1);
+  mix-blend-mode: soft-light;
+}
+
+.spectrum-hero-card__content {
+  z-index: 1;
+  transform: translateZ(8px);
+  transform-style: preserve-3d;
+}
+
 .hero-collection {
   margin-top: 0.45rem !important;
   font-family: var(--display-font);
@@ -719,7 +780,8 @@ button {
   z-index: 2;
 }
 
-.cta-button:hover {
+.cta-button:hover,
+.cta-button[data-tilt-hovered="true"] {
   border-color: rgba(255, 255, 255, 0.72);
   background-position: 50% 45%, 43% 50%, center;
   transform: translateY(-1px) scale(1.01);
@@ -734,12 +796,14 @@ button {
     0 0 1.55rem var(--cta-glow);
 }
 
-.cta-button:hover::before {
+.cta-button:hover::before,
+.cta-button[data-tilt-hovered="true"]::before {
   opacity: 0.82;
   transform: scaleX(1.06);
 }
 
-.cta-button:hover::after {
+.cta-button:hover::after,
+.cta-button[data-tilt-hovered="true"]::after {
   opacity: 0.9;
   transform: translateY(-0.5px) scaleX(1.04);
 }
@@ -859,6 +923,203 @@ button {
   color: white;
 }
 
+.waitlist-page {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  min-height: 100svh;
+  flex-direction: column;
+  overflow-x: hidden;
+  padding-top: 2rem;
+  background: var(--page-bg);
+}
+
+.waitlist-backdrop {
+  position: fixed;
+  z-index: -2;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--page-bg);
+}
+
+.waitlist-backdrop__video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.9;
+}
+
+.waitlist-backdrop__veil {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 42%, transparent 12%, rgba(2, 3, 10, 0.28) 68%),
+    linear-gradient(180deg, rgba(2, 3, 10, 0.26), rgba(2, 3, 10, 0.5));
+}
+
+.waitlist-content {
+  display: grid;
+  width: 100%;
+  min-height: clamp(34rem, 66svh, 56rem);
+  flex: 1;
+  place-items: center;
+  padding: clamp(6rem, 10vh, 10rem) 2rem;
+}
+
+.waitlist-lookup {
+  width: 100%;
+}
+
+.waitlist-check-card {
+  --glass-radius: clamp(1.75rem, 2.6vw, 3rem);
+  width: min(calc(100vw - 4rem), var(--experience-shell-max));
+  margin-inline: auto;
+  animation: waitlist-card-enter 360ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+.waitlist-check-card .glass-card__content {
+  padding: clamp(2rem, 4vw, 4rem);
+  transform: none;
+}
+
+.waitlist-check-card h1 {
+  max-width: 12ch;
+  font-size: clamp(3rem, 6.5vw, 7.25rem);
+  text-wrap: balance;
+}
+
+.waitlist-form {
+  margin-top: clamp(0.9rem, 1.5vw, 1.35rem);
+}
+
+.waitlist-form__label {
+  display: block;
+  margin-bottom: 1rem;
+  color: var(--text);
+  font-family: var(--display-font);
+  font-size: clamp(1.2rem, 2.25vw, 2rem);
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+}
+
+.waitlist-form__controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+}
+
+.waitlist-input {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.78rem 1.35rem;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 999px;
+  outline: 0;
+  color: var(--text);
+  caret-color: var(--cyan);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.035)),
+    rgba(3, 4, 11, 0.56);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.13),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.34),
+    0 8px 24px rgba(0, 0, 0, 0.2);
+  font-family: var(--body-font);
+  font-size: clamp(1rem, 1.25vw, 1.12rem);
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  transition:
+    border-color 130ms ease-out,
+    box-shadow 130ms ease-out,
+    background-color 130ms ease-out;
+}
+
+.waitlist-input::placeholder {
+  color: rgba(247, 246, 255, 0.38);
+}
+
+.waitlist-input:hover {
+  border-color: rgba(255, 255, 255, 0.36);
+}
+
+.waitlist-input:focus-visible {
+  border-color: rgba(36, 235, 224, 0.72);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 0 0 3px rgba(36, 235, 224, 0.12),
+    0 0 1.6rem rgba(36, 235, 224, 0.1);
+}
+
+.waitlist-input[aria-invalid="true"] {
+  border-color: rgba(255, 126, 167, 0.78);
+  box-shadow: 0 0 0 3px rgba(255, 92, 143, 0.1);
+}
+
+.waitlist-submit {
+  min-width: 11rem;
+  min-height: 3rem;
+  padding: 0.78rem 1.35rem;
+  font-size: 0.86rem;
+}
+
+.waitlist-submit:disabled,
+.waitlist-submit:disabled:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  cursor: not-allowed;
+  opacity: 0.52;
+  transform: none;
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.24),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.44),
+    0 6px 18px rgba(0, 0, 0, 0.22);
+}
+
+.waitlist-submit:disabled::before,
+.waitlist-submit:disabled::after {
+  opacity: 0.08;
+  transform: none;
+}
+
+.waitlist-feedback {
+  min-height: 1.4rem;
+  margin: 0.8rem 0 0 !important;
+  color: rgba(247, 246, 255, 0.58) !important;
+  font-size: 0.82rem !important;
+  line-height: 1.4 !important;
+}
+
+.waitlist-feedback[data-tone="error"] {
+  color: #ff9cbd !important;
+}
+
+.waitlist-feedback[data-tone="ready"] {
+  color: #70f5e9 !important;
+}
+
+.site-footer--page {
+  position: relative;
+  z-index: 1;
+  right: auto;
+  bottom: auto;
+  left: auto;
+  flex: 0 0 auto;
+  margin: 0 auto 2rem;
+  transform: none;
+}
+
+@keyframes waitlist-card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (min-aspect-ratio: 2/1) {
   .story-card--hero {
     left: max(9vw, calc((100vw - var(--experience-shell-max)) / 2));
@@ -959,6 +1220,48 @@ button {
   .site-footer-link {
     min-height: 2.75rem;
     padding-block: 0.65rem;
+  }
+
+  .waitlist-page {
+    padding-top: 1rem;
+  }
+
+  .waitlist-content {
+    min-height: 34rem;
+    padding: 5rem 1rem;
+  }
+
+  .waitlist-check-card .glass-card__content {
+    padding: 1.5rem;
+  }
+
+  .waitlist-check-card {
+    width: calc(100vw - 2rem);
+  }
+
+  .waitlist-check-card h1 {
+    font-size: clamp(2.65rem, 13vw, 4.4rem);
+  }
+
+  .waitlist-form {
+    margin-top: 1rem;
+  }
+
+  .waitlist-form__controls {
+    grid-template-columns: 1fr;
+  }
+
+  .waitlist-input,
+  .waitlist-submit {
+    min-height: 3rem;
+  }
+
+  .waitlist-submit {
+    width: 100%;
+  }
+
+  .site-footer--page {
+    margin-bottom: max(1rem, env(safe-area-inset-bottom));
   }
 }
 

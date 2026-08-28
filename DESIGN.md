@@ -350,6 +350,28 @@ as the navbar.
 
 ## Supporting component patterns
 
+### Waitlist lookup form
+
+The `/waitlist` page reuses the ambient hero loop, navbar, footer, and flat
+glass treatment. Its main card is centered, front-facing, and uses the same
+`min(calc(100% - 4rem), 112rem)` shell as the navbar and footer; it must not
+inherit the landing story cards' perspective or tilt.
+
+- Card padding: `clamp(2rem, 4vw, 4rem)`.
+- Heading: Audiowide, `clamp(3rem, 6.5vw, 7.25rem)`, maximum width `12ch`.
+- Field label: Audiowide, `clamp(1.2rem, 2.25vw, 2rem)`.
+- Input and submit control: standard CTA geometry with `3rem` minimum height,
+  `0.78rem 1.35rem` padding, and pill radius.
+- Input surface: dark translucent fill, subtle white inset, and a cyan focus
+  ring. Never use a solid white field over the glass surface.
+- Default feedback is the single sentence `Submitting your wallet address will
+  not connect it.` Invalid feedback uses soft pink and accepted-format feedback
+  uses cyan.
+- At `760px` and below, the input and action stack vertically, the action fills
+  the available width, and both controls retain the standard `3rem` CTA height.
+- Until a spot data source is connected, validate only the classic XRPL address
+  shape and state clearly that no spot lookup has taken place.
+
 ### Display statistics
 
 Use the Audiowide display number immediately above the section heading. The
