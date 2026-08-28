@@ -264,7 +264,11 @@ test("the hero card stays inside the same wide-screen shell as the navbar", asyn
   assert.match(experienceSource, /<TiltCard[\s\S]*unstyled/);
   assert.match(experienceSource, /<TiltCardItem depth=\{96\}>/);
   assert.match(experienceSource, /<TiltCardItem depth=\{68\}>/);
-  assert.match(experienceSource, /<TiltCardItem depth=\{48\}>/);
+  assert.equal(
+    experienceSource.match(/<TiltCardItem depth=\{96\}>/g)?.length,
+    2,
+    "the hero title and CTAs must share the highest content plane",
+  );
   assert.match(
     tiltCardSource,
     /data-tilt-hovered/,

@@ -142,7 +142,7 @@ function StoryCards({
             <TiltCardItem depth={68}>
               <p className="hero-collection">COLLECTION</p>
             </TiltCardItem>
-            <TiltCardItem depth={48}>
+            <TiltCardItem depth={96}>
               <div className="cta-row">
                 <CTAButton>Join the Waitlist</CTAButton>
                 <CTAButton variant="secondary">View Collection</CTAButton>
