@@ -633,8 +633,8 @@ button {
     rgba(6, 7, 16, 0.5) 70%,
     rgba(3, 4, 11, 0.72) 100%
   );
-  backdrop-filter: blur(clamp(36px, 3vw, 46px)) saturate(106%) brightness(0.92);
-  -webkit-backdrop-filter: blur(clamp(36px, 3vw, 46px)) saturate(106%) brightness(0.92);
+  backdrop-filter: blur(clamp(52px, 4.2vw, 68px)) saturate(106%) brightness(0.92);
+  -webkit-backdrop-filter: blur(clamp(52px, 4.2vw, 68px)) saturate(106%) brightness(0.92);
 }
 
 .spectrum-hero-card__surface::before {
@@ -703,6 +703,14 @@ button {
 .glass-card--final h2 {
   text-align: center;
   font-size: clamp(3rem, 5.1vw, 6.2rem);
+}
+
+.spectrum-final-card-stage {
+  width: 100%;
+}
+
+.spectrum-final-card__heading {
+  transform-style: preserve-3d;
 }
 
 .cta-row {

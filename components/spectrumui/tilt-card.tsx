@@ -48,6 +48,8 @@ export interface TiltCardItemProps {
   /** Lift toward the viewer in pixels while the card is hovered. Default 0 */
   depth?: number
   className?: string
+  /** Semantic element used by the lifted layer. Default div */
+  as?: "div" | "span"
 }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -271,13 +273,14 @@ export function TiltCardItem({
   children,
   depth = 0,
   className,
+  as: Component = "div",
 }: TiltCardItemProps) {
   const shouldReduceMotion = useReducedMotion()
   const { hovered } = useContext(TiltCardContext)
   const lifted = hovered && !shouldReduceMotion
 
   return (
-    <div
+    <Component
       className={cn(
         "transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform motion-reduce:transition-none",
         className,
@@ -288,6 +291,6 @@ export function TiltCardItem({
       }}
     >
       {children}
-    </div>
+    </Component>
   )
 }

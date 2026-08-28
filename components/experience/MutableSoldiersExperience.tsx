@@ -218,15 +218,35 @@ function StoryCards({
       </StoryCardShell>
 
       <StoryCardShell name="final" className="story-card--final">
-        <GlassCard className="glass-card--final" flat>
-          <h2>
-            <span>Join the Ranks.</span>
-            <span>Secure your Spot.</span>
-          </h2>
-          <div className="cta-row cta-row--center">
-            <CTAButton>Join the WaitList</CTAButton>
+        <TiltCard
+          containerClassName="glass-card-stage spectrum-final-card-stage"
+          className="glass-card glass-card--final spectrum-hero-card spectrum-final-card"
+          maxTilt={12}
+          scale={1.02}
+          perspective={1000}
+          glareColor="rgba(164, 115, 255, 0.28)"
+          unstyled
+        >
+          <div
+            aria-hidden="true"
+            className="spectrum-hero-card__surface spectrum-final-card__surface"
+          />
+          <div className="glass-card__content spectrum-hero-card__content spectrum-final-card__content">
+            <h2 className="spectrum-final-card__heading">
+              <TiltCardItem as="span" depth={40}>
+                Join the Ranks.
+              </TiltCardItem>
+              <TiltCardItem as="span" depth={72}>
+                Secure your Spot.
+              </TiltCardItem>
+            </h2>
+            <TiltCardItem depth={96}>
+              <div className="cta-row cta-row--center">
+                <CTAButton>Join the WaitList</CTAButton>
+              </div>
+            </TiltCardItem>
           </div>
-        </GlassCard>
+        </TiltCard>
       </StoryCardShell>
 
       <SiteFooter />

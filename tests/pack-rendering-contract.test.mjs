@@ -36,6 +36,21 @@ const tiltCardPath = new URL(
   import.meta.url,
 );
 const globalStylesPath = new URL("../app/globals.css", import.meta.url);
+const glassCardStylesPath = new URL(
+  "../assets/glass-tilt-card/GlassTiltCard.module.css",
+  import.meta.url,
+);
+
+test("glass surfaces use the thicker shared backdrop blur", async () => {
+  const [stylesSource, glassCardStylesSource] = await Promise.all([
+    readFile(globalStylesPath, "utf8"),
+    readFile(glassCardStylesPath, "utf8"),
+  ]);
+  const thickerBlur = /blur\(clamp\(52px,\s*4\.2vw,\s*68px\)\)/;
+
+  assert.match(stylesSource, thickerBlur);
+  assert.match(glassCardStylesSource, thickerBlur);
+});
 
 test("pack fades keep a stable Three.js render mode", async () => {
   const source = await readFile(packScenePath, "utf8");
@@ -266,8 +281,8 @@ test("the hero card stays inside the same wide-screen shell as the navbar", asyn
   assert.match(experienceSource, /<TiltCardItem depth=\{68\}>/);
   assert.equal(
     experienceSource.match(/<TiltCardItem depth=\{96\}>/g)?.length,
-    2,
-    "the hero title and CTAs must share the highest content plane",
+    3,
+    "the hero title, hero CTAs, and final CTA must share the highest content plane",
   );
   assert.match(
     tiltCardSource,
@@ -353,7 +368,19 @@ test("the final scene includes a responsive glass footer on the shared shell", a
   assert.match(experienceSource, /<SiteFooter \/>/);
   assert.match(
     experienceSource,
-    /<GlassCard className="glass-card--final" flat>/,
+    /StoryCardShell name="final"[\s\S]*?<TiltCard[\s\S]*?className="glass-card glass-card--final spectrum-hero-card spectrum-final-card"/,
+  );
+  assert.match(
+    experienceSource,
+    /<TiltCardItem as="span" depth=\{40\}>\s*Join the Ranks\./,
+  );
+  assert.match(
+    experienceSource,
+    /<TiltCardItem as="span" depth=\{72\}>\s*Secure your Spot\./,
+  );
+  assert.match(
+    experienceSource,
+    /StoryCardShell name="final"[\s\S]*?<TiltCardItem depth=\{96\}>[\s\S]*?<CTAButton>Join the WaitList<\/CTAButton>/,
   );
   assert.match(experienceSource, /\[data-card="footer"\] \[data-card-motion\]/);
   assert.doesNotMatch(
