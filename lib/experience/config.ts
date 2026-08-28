@@ -41,22 +41,22 @@ export const cinematicSegments = [
   {
     id: "opening",
     scrollRange: [0.5, 0.62],
-    timeRange: [0, 2],
+    timeRange: [0, timeAtFrame(3, 19)],
   },
   {
     id: "after-classes",
     scrollRange: [0.66, 0.73],
-    timeRange: [2, 4],
+    timeRange: [timeAtFrame(3, 19), timeAtFrame(6, 19)],
   },
   {
     id: "after-rarities",
     scrollRange: [0.77, 0.84],
-    timeRange: [4, timeAtFrame(6, 22)],
+    timeRange: [timeAtFrame(6, 19), timeAtFrame(10, 18)],
   },
   {
     id: "finale",
     scrollRange: [0.88, 0.94],
-    timeRange: [timeAtFrame(6, 22), timeAtFrame(7, 20)],
+    timeRange: [timeAtFrame(10, 18), timeAtFrame(12, 3)],
   },
 ] as const satisfies readonly {
   id: string;
@@ -75,13 +75,13 @@ export const verifiedMedia = {
     keyframeIntervalSeconds: 5.37,
   },
   cinematic: {
-    filename: "scenes-h264-scroll.mp4",
+    filename: "scenes-cinematic.mp4",
     codec: "H264",
     width: 2560,
     height: 1440,
     fps: cinematicFps,
-    durationSeconds: 7.7,
-    lastFrameSeconds: timeAtFrame(7, 20),
+    durationSeconds: 12.1,
+    lastFrameSeconds: timeAtFrame(12, 3),
     keyframeIntervalSeconds: 0.5,
     seekEpsilonSeconds: 1 / 60,
   },
@@ -216,7 +216,7 @@ export const experienceTuning = {
   maxDpr: 1.5,
   media: {
     scrubFps: 30,
-    cinematicAutoPreloadProgress: 0.33,
+    cinematicPreloadThreshold: 0.15,
   },
   camera: {
     fov: 35,

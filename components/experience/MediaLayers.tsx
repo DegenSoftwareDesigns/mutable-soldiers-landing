@@ -104,11 +104,13 @@ function cinematicOpacity(progress: number) {
 type CinematicVideoLayerProps = {
   progressSignal: ExperienceProgressSignal;
   onStatusChange?: (status: CinematicVideoStatus) => void;
+  onPreloadThreshold?: () => void;
 };
 
 export function CinematicVideoLayer({
   progressSignal,
   onStatusChange,
+  onPreloadThreshold,
 }: CinematicVideoLayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const placeholderRef = useRef<HTMLDivElement>(null);
@@ -127,20 +129,20 @@ export function CinematicVideoLayer({
     let scrubTimer = 0;
     let latestProgress = progressSignal.get();
     let pendingTargetTime: number | null = null;
-    let autoPreloadEnabled = video.preload === "auto";
+    let preloadThresholdReached = false;
     const scrubIntervalMs = 1000 / experienceTuning.media.scrubFps;
 
-    const enableAutoPreload = (progress: number) => {
-      if (
-        autoPreloadEnabled ||
-        progress < experienceTuning.media.cinematicAutoPreloadProgress
-      ) {
+    const checkPreloadThreshold = () => {
+      if (preloadThresholdReached || video.buffered.length === 0) return;
+      if (video.duration <= 0 || !Number.isFinite(video.duration)) return;
+
+      const bufferedRatio = video.buffered.end(0) / video.duration;
+      if (bufferedRatio < experienceTuning.media.cinematicPreloadThreshold) {
         return;
       }
 
-      autoPreloadEnabled = true;
-      video.preload = "auto";
-      video.load();
+      preloadThresholdReached = true;
+      onPreloadThreshold?.();
     };
 
     const flushSeek = () => {
@@ -196,7 +198,6 @@ export function CinematicVideoLayer({
 
     const syncProgress = (progress: number) => {
       latestProgress = progress;
-      enableAutoPreload(progress);
 
       const opacity = String(cinematicOpacity(progress));
       if (video.style.opacity !== opacity) video.style.opacity = opacity;
@@ -214,14 +215,23 @@ export function CinematicVideoLayer({
       scheduleScrub(latestProgress);
     };
     const onSeeked = () => flushSeek();
-    const onError = () => setStatus("missing");
+    const onError = () => {
+      setStatus("missing");
+      if (!preloadThresholdReached) {
+        preloadThresholdReached = true;
+        onPreloadThreshold?.();
+      }
+    };
+    const onProgress = () => checkPreloadThreshold();
 
     video.addEventListener("loadeddata", onLoadedData);
     video.addEventListener("seeked", onSeeked);
     video.addEventListener("error", onError);
+    video.addEventListener("progress", onProgress);
     if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
       setStatus("ready");
     }
+    checkPreloadThreshold();
 
     const unsubscribe = progressSignal.subscribe(syncProgress);
     syncProgress(latestProgress);
@@ -232,8 +242,9 @@ export function CinematicVideoLayer({
       video.removeEventListener("loadeddata", onLoadedData);
       video.removeEventListener("seeked", onSeeked);
       video.removeEventListener("error", onError);
+      video.removeEventListener("progress", onProgress);
     };
-  }, [progressSignal, status]);
+  }, [progressSignal, status, onPreloadThreshold]);
 
   return (
     <div className="cinematic-layer" data-layer="cinematic" aria-hidden="true">
@@ -245,7 +256,7 @@ export function CinematicVideoLayer({
           data-loaded={status === "ready" ? "true" : undefined}
           muted
           playsInline
-          preload="metadata"
+          preload="auto"
         />
         <div ref={placeholderRef} className="cinematic-placeholder">
           <span>Missing development asset</span>

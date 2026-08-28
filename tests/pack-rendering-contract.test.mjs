@@ -22,6 +22,10 @@ const navbarPath = new URL(
   "../components/experience/SiteNavbar.tsx",
   import.meta.url,
 );
+const footerPath = new URL(
+  "../components/experience/SiteFooter.tsx",
+  import.meta.url,
+);
 const globalStylesPath = new URL("../app/globals.css", import.meta.url);
 
 test("pack fades keep a stable Three.js render mode", async () => {
@@ -176,16 +180,20 @@ test("one cinematic element scrubs the unified video across authored stops", asy
     readFile(mediaLayersPath, "utf8"),
   ]);
 
-  assert.match(assetsSource, /src:\s*"\/assets\/scenes-h264-scroll\.mp4"/);
+  assert.match(assetsSource, /src:\s*"\/assets\/scenes-cinematic\.mp4"/);
   assert.doesNotMatch(assetsSource, /scene-[1-4]-web\.webm/);
   assert.equal(
     Array.from(mediaSource.matchAll(/<video\b/g)).length,
     2,
     "the experience must render only the ambient and unified cinematic videos",
   );
-  assert.match(configSource, /timeRange:\s*\[0, 2\]/);
-  assert.match(configSource, /timeRange:\s*\[2, 4\]/);
-  assert.match(configSource, /timeAtFrame\(6, 22\)/);
+  assert.match(configSource, /timeRange:\s*\[0, timeAtFrame\(3, 19\)\]/);
+  assert.match(
+    configSource,
+    /timeRange:\s*\[timeAtFrame\(3, 19\), timeAtFrame\(6, 19\)\]/,
+  );
+  assert.match(configSource, /timeAtFrame\(10, 18\)/);
+  assert.match(configSource, /timeAtFrame\(12, 3\)/);
   assert.match(mediaSource, /cinematicTimeForProgress\(progress\)/);
 });
 
@@ -220,6 +228,8 @@ test("the floating glass navbar keeps its authored navigation contract", async (
   ]);
 
   assert.match(navbarSource, /<GlassTiltCard/);
+  assert.match(navbarSource, /src="\/assets\/Logo-navbar\.svg"/);
+  assert.doesNotMatch(navbarSource, />\s*MS\s*</);
   assert.match(navbarSource, /href="#hero"/);
   assert.match(navbarSource, /\["Waitlist", "Artists", "Drops"\]/);
   assert.match(navbarSource, /<CTAButton>Connect Wallet<\/CTAButton>/);
@@ -254,5 +264,63 @@ test("the hero card stays inside the same wide-screen shell as the navbar", asyn
     stylesSource,
     /\.story-card--hero\s*{[^}]*min-width:\s*34rem/s,
     "a fixed 34rem minimum creates empty horizontal space in the hero card",
+  );
+});
+
+test("the final scene includes a responsive glass footer on the shared shell", async () => {
+  const [footerSource, experienceSource, stylesSource] = await Promise.all([
+    readFile(footerPath, "utf8"),
+    readFile(experiencePath, "utf8"),
+    readFile(globalStylesPath, "utf8"),
+  ]);
+
+  assert.match(footerSource, /<GlassTiltCard/);
+  assert.match(footerSource, /src="\/assets\/Logo\.svg"/);
+  assert.match(footerSource, /href="#hero"/);
+  assert.match(footerSource, /\["Waitlist", "Artists", "Drops"\]/);
+  assert.match(footerSource, /\["Army X", "Telegram", "xrp\.cafe"\]/);
+  assert.match(footerSource, /disabled/);
+  assert.match(experienceSource, /footer:\s*uiWindows\.final/);
+  assert.match(experienceSource, /<SiteFooter \/>/);
+  assert.match(
+    experienceSource,
+    /<GlassCard className="glass-card--final" flat>/,
+  );
+  assert.match(experienceSource, /\[data-card="footer"\] \[data-card-motion\]/);
+  assert.doesNotMatch(
+    experienceSource,
+    /reveal\(\s*'\[data-card="(?:final|footer)"\]/,
+    "the final CTA and footer must not inherit the perspective reveal",
+  );
+  assert.match(
+    experienceSource,
+    /revealFlat\(\s*'\[data-card="footer"\]/,
+    "the footer must enter through the flat reveal path",
+  );
+  assert.match(
+    experienceSource,
+    /revealFlat\(\s*'\[data-card="final"\]/,
+    "the final CTA must enter through the flat reveal path",
+  );
+  assert.match(
+    experienceSource,
+    /const revealFlat[\s\S]*rotation:\s*0,[\s\S]*skewX:\s*0,[\s\S]*skewY:\s*0,/,
+    "the flat reveal must clear GSAP's decomposed 2D rotation and skew",
+  );
+  assert.match(
+    stylesSource,
+    /\.site-footer\s*{[^}]*width:[^;]*var\(--experience-shell-max\)/s,
+  );
+  assert.match(
+    stylesSource,
+    /\.site-footer__motion\s*{[^}]*transform-style:\s*flat;/s,
+  );
+  assert.match(
+    stylesSource,
+    /\.glass-card-stage--flat\s*{[^}]*perspective:\s*none;/s,
+  );
+  assert.match(
+    stylesSource,
+    /\.glass-card--flat-surface\s*{[^}]*transform:\s*none\s*!important;/s,
   );
 });

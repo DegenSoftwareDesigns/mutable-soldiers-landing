@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { GlassTiltCard } from "@/assets/glass-tilt-card";
 import { CTAButton } from "./GlassCard";
 
@@ -17,10 +18,14 @@ export function SiteNavbar() {
       >
         <div className="site-navbar-inner">
           <a className="site-navbar-brand" href="#hero" aria-label="Mutable Soldiers home">
-            <span className="site-navbar-brand__mark" aria-hidden="true">
-              MS
-            </span>
-            <span className="site-navbar-brand__name">Mutable Soldiers</span>
+            <Image
+              className="site-navbar-brand__logo"
+              src="/assets/Logo-navbar.svg"
+              width={309}
+              height={100}
+              alt=""
+              priority
+            />
           </a>
 
           <nav className="site-navbar-nav" aria-label="Primary navigation">

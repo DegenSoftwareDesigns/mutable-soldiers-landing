@@ -17,6 +17,7 @@ import {
   type CinematicVideoStatus,
 } from "./MediaLayers";
 import { PackSceneCanvas, type PackSceneReady } from "./PackSceneCanvas";
+import { SiteFooter } from "./SiteFooter";
 import { SiteNavbar } from "./SiteNavbar";
 import { useSmoothScroll } from "./useSmoothScroll";
 import {
@@ -78,6 +79,7 @@ const storyCardWindows = {
   rarities: uiWindows.rarities,
   artists: uiWindows.artists,
   final: uiWindows.final,
+  footer: uiWindows.final,
 } as const;
 
 function StoryCards({
@@ -195,7 +197,7 @@ function StoryCards({
       </StoryCardShell>
 
       <StoryCardShell name="final" className="story-card--final">
-        <GlassCard className="glass-card--final">
+        <GlassCard className="glass-card--final" flat>
           <h2>
             <span>Join the Ranks.</span>
             <span>Secure your Spot.</span>
@@ -205,6 +207,8 @@ function StoryCards({
           </div>
         </GlassCard>
       </StoryCardShell>
+
+      <SiteFooter />
     </div>
   );
 }
@@ -222,6 +226,7 @@ export function MutableSoldiersExperience() {
   const [fontsReady, setFontsReady] = useState(false);
   const [videoStatus, setVideoStatus] =
     useState<CinematicVideoStatus>("loading");
+  const [cinematicPreloadReady, setCinematicPreloadReady] = useState(false);
   const [loaderExiting, setLoaderExiting] = useState(false);
   const [loaderVisible, setLoaderVisible] = useState(true);
   const [debug, setDebug] = useState(false);
@@ -255,6 +260,9 @@ export function MutableSoldiersExperience() {
   }, []);
   const onVideoStatus = useCallback((status: CinematicVideoStatus) => {
     setVideoStatus(status);
+  }, []);
+  const onCinematicPreloadThreshold = useCallback(() => {
+    setCinematicPreloadReady(true);
   }, []);
 
   useEffect(() => {
@@ -384,6 +392,37 @@ export function MutableSoldiersExperience() {
             }
           };
 
+          const revealFlat = (selector: string, start: number) => {
+            timeline.fromTo(
+              selector,
+              {
+                autoAlpha: 0,
+                y: reduceMotion ? 0 : 18,
+                z: 0,
+                scale: 1,
+                rotation: 0,
+                rotationX: 0,
+                rotationY: 0,
+                skewX: 0,
+                skewY: 0,
+              },
+              {
+                autoAlpha: 1,
+                y: 0,
+                z: 0,
+                scale: 1,
+                rotation: 0,
+                rotationX: 0,
+                rotationY: 0,
+                skewX: 0,
+                skewY: 0,
+                duration: transitionDuration,
+                immediateRender: false,
+              },
+              start,
+            );
+          };
+
           timeline.to(
             '[data-card="hero"] [data-card-motion]',
             {
@@ -422,10 +461,13 @@ export function MutableSoldiersExperience() {
             ...uiWindows.artists,
             1,
           );
-          reveal(
+          revealFlat(
             '[data-card="final"] [data-card-motion]',
-            ...uiWindows.final,
-            -1,
+            uiWindows.final[0],
+          );
+          revealFlat(
+            '[data-card="footer"] [data-card-motion]',
+            uiWindows.final[0],
           );
 
           timeline.to(
@@ -503,8 +545,11 @@ export function MutableSoldiersExperience() {
   } as CSSProperties;
   const chapter = currentChapter(diagnosticProgress);
   const criticalReadyCount =
-    Number(fontsReady) + Number(ambientReady !== null) + Number(packStatus !== null);
-  const loaderProgress = Math.round((criticalReadyCount / 3) * 100);
+    Number(fontsReady) +
+    Number(ambientReady !== null) +
+    Number(packStatus !== null) +
+    Number(cinematicPreloadReady);
+  const loaderProgress = Math.round((criticalReadyCount / 4) * 100);
 
   return (
     <main id="hero" className="experience-scroll" ref={scrollRef} style={style}>
@@ -524,6 +569,7 @@ export function MutableSoldiersExperience() {
         <CinematicVideoLayer
           progressSignal={progressSignal}
           onStatusChange={onVideoStatus}
+          onPreloadThreshold={onCinematicPreloadThreshold}
         />
         <StoryCards progressSignal={progressSignal} />
 

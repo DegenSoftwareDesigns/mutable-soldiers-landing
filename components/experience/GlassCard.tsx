@@ -6,20 +6,24 @@ type GlassCardProps = {
   className?: string;
   children: React.ReactNode;
   interactive?: boolean;
+  flat?: boolean;
 };
 
 export function GlassCard({
   className = "",
   children,
   interactive = true,
+  flat = false,
 }: GlassCardProps) {
+  const enableTilt = interactive && !flat;
+
   return (
     <GlassTiltCard
-      className={`glass-card-stage ${className}`}
-      cardClassName="glass-card"
+      className={`glass-card-stage ${flat ? "glass-card-stage--flat" : ""} ${className}`}
+      cardClassName={`glass-card ${flat ? "glass-card--flat-surface" : ""}`}
       contentMode="intrinsic"
-      idleFloat={interactive}
-      interactive={interactive}
+      idleFloat={enableTilt}
+      interactive={enableTilt}
       maxTilt={8}
     >
       <div className="glass-card__content">{children}</div>

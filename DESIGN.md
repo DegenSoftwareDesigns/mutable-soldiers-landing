@@ -6,9 +6,9 @@ This document captures the reusable visual language already implemented in the
 Mutable Soldiers landing page. Use it when creating or modifying components so
 that typography, color, spacing, glass surfaces, and controls remain consistent.
 
-This version intentionally excludes the footer, video, 3D rendering, media
-loading, and scroll-story mechanics. Add footer guidance only after that
-component exists and has been approved.
+This version covers the landing content cards, CTA controls, navbar, and footer.
+It intentionally excludes video, 3D rendering, media loading, and scroll-story
+mechanics.
 
 ## Visual direction
 
@@ -113,13 +113,18 @@ These placements describe the landing compositions, not universal page-layout
 templates. Reuse their internal spacing and typography before reusing their
 viewport positioning.
 
+The final CTA and footer are exceptions to the tilted story-card treatment. Both
+remain completely front-facing: no perspective, resting tilt, skew, scale, or
+idle float.
+
 ## Glass card
 
 ### Structure
 
-A glass card consists of a stable perspective stage, the glass surface, two tint
-layers, content, a pointer-driven specular layer, subtle chromatic edging, and a
-final edge highlight. Content sits at `translateZ(18px)`.
+A glass card consists of the glass surface, two tint layers, content, subtle
+chromatic edging, and a final edge highlight. Interactive story cards also use
+a perspective stage and a pointer-driven specular layer. Their content sits at
+`translateZ(18px)`.
 
 ### Surface recipe
 
@@ -162,6 +167,22 @@ final edge highlight. Content sits at `translateZ(18px)`.
 
 Do not nest glass cards. Do not reproduce the style with blur alone; the layered
 tints, border, inset lighting, and dark lower gradient are essential.
+
+### Flat glass variant
+
+Use flat glass for persistent navigation and for the final conversion area. It
+keeps the layered tint, blur, border, and inset lighting while removing all
+perspective and tilt behavior.
+
+| Role | Radius | Border | Motion |
+| --- | --- | --- | --- |
+| Navbar | `1.35rem` | `rgba(255, 255, 255, 0.20)` | None |
+| Final CTA | Standard card radius | Standard card border | Flat entrance only |
+| Footer | `1.75rem` | `rgba(255, 255, 255, 0.18)` | Flat entrance only |
+
+Flat surfaces must render with `transform: none` in their resting state. Do not
+add a small decorative rotation: the horizontal edges are intentionally aligned
+with the viewport and the shared content shell.
 
 ## CTA buttons
 
@@ -233,9 +254,20 @@ At ultrawide sizes, left- and right-aligned cards stop at that shell instead of
 continuing to drift toward the viewport edges.
 
 The left column contains the brand, the middle column contains page navigation,
-and the right column contains the wallet CTA. Until a final logo asset exists,
-the brand uses the circular Audiowide `MS` mark plus the uppercase
-`Mutable Soldiers` wordmark.
+and the right column contains the wallet CTA. The brand uses the complete
+`Logo-navbar.svg` artwork at its native `309:100` aspect ratio. Its height is
+fixed at `2.75rem`, matching the wallet CTA, while its width remains automatic
+so the artwork is never cropped or distorted.
+
+### Surface treatment
+
+- Border: `rgba(255, 255, 255, 0.20)`.
+- Upper inset: `1.5px 1.5px 0 rgba(255, 255, 255, 0.32)`.
+- Lower inset: `-1.5px -1.5px 1px rgba(0, 0, 0, 0.35)`.
+- Internal haze: `0 0 34px rgba(255, 255, 255, 0.045)`.
+- Cast shadow: `0 16px 42px rgba(0, 0, 0, 0.38)`.
+- Violet ambient glow: `0 0 2.25rem rgba(132, 64, 255, 0.08)`.
+- No tilt, idle float, or hover movement on the card itself.
 
 ### Navigation and actions
 
@@ -257,10 +289,64 @@ the brand uses the circular Audiowide `MS` mark plus the uppercase
 - At `760px` and below, the navbar becomes a two-row layout: brand and wallet
   action on the first row, navigation spanning the second row.
 - Mobile width is `calc(100% - 2rem)` while the `32px` top offset remains.
-- At `440px` and below, hide only the written brand name; retain the `MS` mark,
+- At `440px` and below, retain the complete logo at the shared `2.75rem` height,
   all four navigation items, and the wallet action.
 - Do not replace the navigation with a menu until the number or length of routes
   makes the four-item row fail at the `320px` minimum supported width.
+
+## Site footer
+
+The footer is part of the landing's final scene and appears alongside the final
+CTA. It is a static, non-tilting glass card that uses the same horizontal shell
+as the navbar.
+
+### Placement and structure
+
+- Desktop width: `min(calc(100% - 4rem), 112rem)`.
+- Desktop position: centered with `2rem` bottom spacing.
+- Radius: `1.75rem`.
+- Layout: full brand artwork on the left, followed by `Pages` and `Links`
+  columns on the right.
+- Brand artwork: `Logo.svg` at its native `339:100` aspect ratio, with a maximum
+  width of `17rem`.
+- The surface does not tilt or idle-float; it reuses the navbar's restrained
+  border, layered inset light, blur, and violet ambient shadow.
+- Inner minimum height: `9.5rem`.
+- Inner padding: `clamp(1.35rem, 2.4vw, 2.5rem)` vertically and
+  `clamp(1.5rem, 3vw, 3.25rem)` horizontally.
+- Column gap: `clamp(2.5rem, 7vw, 8rem)`.
+
+### Surface treatment
+
+- Border: `rgba(255, 255, 255, 0.18)`.
+- Upper inset: `1.5px 1.5px 0 rgba(255, 255, 255, 0.28)`.
+- Lower inset: `-1.5px -1.5px 1px rgba(0, 0, 0, 0.38)`.
+- Internal haze: `0 0 42px rgba(255, 255, 255, 0.04)`.
+- Cast shadow: `0 18px 48px rgba(0, 0, 0, 0.42)`.
+- Violet ambient glow: `0 0 2.5rem rgba(132, 64, 255, 0.07)`.
+- The card remains front-facing and uses no perspective, skew, or idle float.
+
+### Links and states
+
+- `Home` links to `#hero`.
+- `Waitlist`, `Artists`, and `Drops` remain disabled until their routes exist.
+- Community labels are `Army X`, `Telegram`, and `xrp.cafe`; they remain
+  disabled until final destinations are supplied.
+- Column headings use Audiowide at `0.92rem`, weight `400`, and `0.035em`
+  tracking.
+- Enabled links use Rajdhani at `0.9rem`, weight `600`, and shift `2px` right on
+  pointer hover.
+- Link color is `rgba(247, 246, 255, 0.72)`; disabled links use
+  `rgba(247, 246, 255, 0.44)`.
+- Focus-visible uses the shared cyan outline.
+
+### Responsive behavior
+
+- At `760px` and below, width becomes `calc(100% - 2rem)` and bottom spacing
+  respects `env(safe-area-inset-bottom)`.
+- The brand spans the first row; `Pages` and `Links` form two equal columns
+  below it.
+- Mobile links use a `2.75rem` minimum height.
 
 ## Supporting component patterns
 
@@ -320,8 +406,6 @@ role.
 - Create slightly different radii, padding, or white alpha values without a new
   documented role.
 - Treat glass as a generic blur effect.
-- Infer footer styling from this document before that component is designed and
-  added here.
 
 ## Implementation references
 
@@ -331,6 +415,8 @@ The current implementation lives in:
 - `components/experience/GlassCard.tsx` — reusable glass-card and CTA wrappers.
 - `components/experience/SiteNavbar.tsx` — navbar structure, navigation state,
   and wallet action.
+- `components/experience/SiteFooter.tsx` — final-scene footer structure, brand,
+  and pending link states.
 - `assets/glass-tilt-card/GlassTiltCard.module.css` — glass surface and states.
 - `assets/glass-tilt-card/GlassTiltCard.tsx` — tilt and pointer behavior.
 
