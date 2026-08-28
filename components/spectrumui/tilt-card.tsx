@@ -39,6 +39,8 @@ export interface TiltCardProps {
   containerClassName?: string
   /** Classes for the card surface */
   className?: string
+  /** Remove the built-in neutral skin so consumers can provide their own surface */
+  unstyled?: boolean
 }
 
 export interface TiltCardItemProps {
@@ -84,6 +86,7 @@ export function TiltCard({
   glareColor = "rgba(255, 255, 255, 0.35)",
   containerClassName,
   className,
+  unstyled = false,
 }: TiltCardProps) {
   const shouldReduceMotion = useReducedMotion()
   const [hovered, setHovered] = useState(false)
@@ -234,14 +237,19 @@ export function TiltCard({
           transformStyle: "preserve-3d",
         }}
         className={cn(
-          "relative rounded-2xl border border-neutral-200 bg-white will-change-transform",
-          "shadow-[0px_1px_2px_0px_rgba(0,0,0,0.04),0px_2px_4px_0px_rgba(0,0,0,0.04)]",
-          "dark:border-neutral-800 dark:bg-neutral-900 dark:shadow-none",
+          "relative will-change-transform",
+          !unstyled &&
+            "rounded-2xl border border-neutral-200 bg-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.04),0px_2px_4px_0px_rgba(0,0,0,0.04)]",
+          !unstyled && "dark:border-neutral-800 dark:bg-neutral-900 dark:shadow-none",
           className,
         )}
       >
         <TiltCardContext.Provider value={{ hovered }}>
-          <div style={{ transformStyle: "preserve-3d" }}>{children}</div>
+          <div
+            style={{ transformStyle: "preserve-3d", borderRadius: "inherit" }}
+          >
+            {children}
+          </div>
         </TiltCardContext.Provider>
 
         {glare && !shouldReduceMotion && (

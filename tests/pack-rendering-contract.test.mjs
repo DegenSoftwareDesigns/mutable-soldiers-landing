@@ -261,6 +261,7 @@ test("the hero card stays inside the same wide-screen shell as the navbar", asyn
 
   assert.match(experienceSource, /from "@\/components\/spectrumui\/tilt-card"/);
   assert.match(experienceSource, /<TiltCard[\s\S]*maxTilt=\{12\}/);
+  assert.match(experienceSource, /<TiltCard[\s\S]*unstyled/);
   assert.match(experienceSource, /<TiltCardItem depth=\{96\}>/);
   assert.match(experienceSource, /<TiltCardItem depth=\{68\}>/);
   assert.match(experienceSource, /<TiltCardItem depth=\{48\}>/);
@@ -268,6 +269,16 @@ test("the hero card stays inside the same wide-screen shell as the navbar", asyn
     tiltCardSource,
     /data-tilt-hovered/,
     "the moving 3D card must resynchronise interactive hover targets",
+  );
+  assert.match(
+    tiltCardSource,
+    /unstyled\?: boolean/,
+    "custom glass treatments must be able to opt out of Spectrum's opaque skin",
+  );
+  assert.match(
+    tiltCardSource,
+    /transformStyle:\s*"preserve-3d",\s*borderRadius:\s*"inherit"/,
+    "the provider wrapper must pass the card radius through to custom surfaces",
   );
   assert.match(
     stylesSource,
