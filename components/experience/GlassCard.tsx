@@ -62,7 +62,6 @@ export function LayeredGlassCard({
       perspective={perspective}
       restRotateX={restRotateX}
       restRotateY={restRotateY}
-      glareColor="rgba(164, 115, 255, 0.28)"
       unstyled
     >
       <div

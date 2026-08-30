@@ -128,7 +128,6 @@ function StoryCards({
           maxTilt={12}
           scale={1.02}
           perspective={1000}
-          glareColor="rgba(164, 115, 255, 0.28)"
           unstyled
         >
           <div aria-hidden="true" className="spectrum-hero-card__surface" />
@@ -250,7 +249,6 @@ function StoryCards({
           maxTilt={12}
           scale={1.02}
           perspective={1000}
-          glareColor="rgba(164, 115, 255, 0.28)"
           unstyled
         >
           <div
