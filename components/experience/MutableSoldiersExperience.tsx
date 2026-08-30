@@ -14,7 +14,7 @@ import {
   TiltCard,
   TiltCardItem,
 } from "@/components/spectrumui/tilt-card";
-import { GlassCard, CTAButton } from "./GlassCard";
+import { CTAButton, GlassCard, LayeredGlassCard } from "./GlassCard";
 import {
   AmbientVideo,
   CinematicVideoLayer,
@@ -153,68 +153,94 @@ function StoryCards({
       </StoryCardShell>
 
       <StoryCardShell name="two-paths" className="story-card--center">
-        <GlassCard>
-          <h2>
-            <span>Two packs,</span>
-            <span>Two paths</span>
+        <LayeredGlassCard>
+          <h2 className="spectrum-layered-card__heading">
+            <TiltCardItem as="span" depth={40}>
+              Two packs,
+            </TiltCardItem>
+            <TiltCardItem as="span" depth={72}>
+              Two paths
+            </TiltCardItem>
           </h2>
-          <p>
-            Different classes. Countless combinations. A unique path shaped with every
-            drop.
-          </p>
-        </GlassCard>
+          <TiltCardItem depth={96}>
+            <p>
+              Different classes. Countless combinations. A unique path shaped with
+              every drop.
+            </p>
+          </TiltCardItem>
+        </LayeredGlassCard>
       </StoryCardShell>
 
       <StoryCardShell
         name="first-drop"
         className="story-card--center story-card--first-drop"
       >
-        <GlassCard className="glass-card--wide">
-          <h2>
-            <span>First Drop Reveal:</span>
-            <span>Soldiers of the</span>
-            <span>Ancient World</span>
+        <LayeredGlassCard className="glass-card--wide">
+          <h2 className="spectrum-layered-card__heading">
+            <TiltCardItem as="span" depth={40}>
+              First Drop:
+            </TiltCardItem>
+            <TiltCardItem as="span" depth={72}>
+              <span>Soldiers of the</span>
+              <span>Ancient World</span>
+            </TiltCardItem>
           </h2>
-          <p>The countdown has begun, the first drop is on its way.</p>
-        </GlassCard>
+          <TiltCardItem depth={96}>
+            <p>The countdown has begun, the first drop is on its way.</p>
+          </TiltCardItem>
+        </LayeredGlassCard>
       </StoryCardShell>
 
       <StoryCardShell name="classes" className="story-card--left">
-        <GlassCard>
-          <p className="story-number">09</p>
-          <h2>Classes</h2>
-          <p>
-            Each class represents a type of historical warrior with the essence of the
-            XRP Army.
-          </p>
-        </GlassCard>
+        <LayeredGlassCard restRotateY={8} maxTilt={6}>
+          <TiltCardItem depth={56}>
+            <h2 className="story-heading--single-line">9 Classes</h2>
+          </TiltCardItem>
+          <TiltCardItem depth={96}>
+            <p>
+              Each class represents a type of historical warrior with the essence of
+              the XRP Army.
+            </p>
+          </TiltCardItem>
+        </LayeredGlassCard>
       </StoryCardShell>
 
       <StoryCardShell name="rarities" className="story-card--right">
-        <GlassCard>
-          <p className="story-number">03</p>
-          <h2>Rarities</h2>
-          <p className="rarity-copy">
-            <span>COMMON: Represent anonymous historical warriors.</span>
-            <span>
-              RARE: Feature fictional or historical characters from popular culture.
-            </span>
-            <span>SPECIAL: Exclusive 1/1 NFTs created by featured NFT artists.</span>
-          </p>
-        </GlassCard>
+        <LayeredGlassCard restRotateY={-8} maxTilt={6}>
+          <TiltCardItem depth={56}>
+            <h2 className="story-heading--single-line">3 Rarities</h2>
+          </TiltCardItem>
+          <TiltCardItem depth={96}>
+            <p className="rarity-copy">
+              <span>COMMON: Represent anonymous historical warriors.</span>
+              <span>
+                RARE: Feature fictional or historical characters from popular culture.
+              </span>
+              <span>SPECIAL: Exclusive 1/1 NFTs created by featured NFT artists.</span>
+            </p>
+          </TiltCardItem>
+        </LayeredGlassCard>
       </StoryCardShell>
 
       <StoryCardShell name="artists" className="story-card--artists">
-        <GlassCard className="glass-card--artists">
-          <p className="story-number">16</p>
-          <h2>Featured Artists</h2>
-          <p>
-            The XRPL is home to incredible talent, and that is why the ARMY wants to
-            shine a spotlight on them. From renowned, established artists who are
-            pillars of the network, to highly talented emerging creators. Together, we
-            will make the XRPL the leading network for artists.
-          </p>
-        </GlassCard>
+        <LayeredGlassCard
+          className="glass-card--artists"
+          restRotateX={10}
+          maxTilt={4}
+          perspective={650}
+        >
+          <TiltCardItem depth={56}>
+            <h2 className="story-heading--single-line">16 Artists</h2>
+          </TiltCardItem>
+          <TiltCardItem depth={96}>
+            <p>
+              1/1 Special NFTs crafted by some of the greatest artists
+              <br />
+              in this space. Each of them representing their own essence through an
+              ARMY soldier.
+            </p>
+          </TiltCardItem>
+        </LayeredGlassCard>
       </StoryCardShell>
 
       <StoryCardShell name="final" className="story-card--final">

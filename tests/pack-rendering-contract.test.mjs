@@ -35,6 +35,10 @@ const tiltCardPath = new URL(
   "../components/spectrumui/tilt-card.tsx",
   import.meta.url,
 );
+const glassCardPath = new URL(
+  "../components/experience/GlassCard.tsx",
+  import.meta.url,
+);
 const globalStylesPath = new URL("../app/globals.css", import.meta.url);
 const glassCardStylesPath = new URL(
   "../assets/glass-tilt-card/GlassTiltCard.module.css",
@@ -273,16 +277,20 @@ test("the hero card stays inside the same wide-screen shell as the navbar", asyn
     readFile(globalStylesPath, "utf8"),
     readFile(tiltCardPath, "utf8"),
   ]);
+  const heroCardSource =
+    experienceSource.match(
+      /<StoryCardShell name="hero"[\s\S]*?<\/StoryCardShell>/,
+    )?.[0] ?? "";
 
   assert.match(experienceSource, /from "@\/components\/spectrumui\/tilt-card"/);
-  assert.match(experienceSource, /<TiltCard[\s\S]*maxTilt=\{12\}/);
-  assert.match(experienceSource, /<TiltCard[\s\S]*unstyled/);
-  assert.match(experienceSource, /<TiltCardItem depth=\{96\}>/);
-  assert.match(experienceSource, /<TiltCardItem depth=\{68\}>/);
+  assert.match(heroCardSource, /<TiltCard[\s\S]*maxTilt=\{12\}/);
+  assert.match(heroCardSource, /<TiltCard[\s\S]*unstyled/);
+  assert.match(heroCardSource, /<TiltCardItem depth=\{96\}>/);
+  assert.match(heroCardSource, /<TiltCardItem depth=\{68\}>/);
   assert.equal(
-    experienceSource.match(/<TiltCardItem depth=\{96\}>/g)?.length,
-    3,
-    "the hero title, hero CTAs, and final CTA must share the highest content plane",
+    heroCardSource.match(/<TiltCardItem depth=\{96\}>/g)?.length,
+    2,
+    "the hero title and CTAs must share the highest content plane",
   );
   assert.match(
     tiltCardSource,
@@ -347,6 +355,133 @@ test("the hero card stays inside the same wide-screen shell as the navbar", asyn
     stylesSource,
     /\.story-card--hero\s*{[^}]*min-width:\s*34rem/s,
     "a fixed 34rem minimum creates empty horizontal space in the hero card",
+  );
+});
+
+test("taxonomy cards combine their counts and lift supporting copy", async () => {
+  const [experienceSource, glassCardSource, stylesSource] = await Promise.all([
+    readFile(experiencePath, "utf8"),
+    readFile(glassCardPath, "utf8"),
+    readFile(globalStylesPath, "utf8"),
+  ]);
+
+  assert.match(glassCardSource, /export function LayeredGlassCard/);
+  assert.match(glassCardSource, /maxTilt = 12/);
+  assert.match(glassCardSource, /<TiltCard[\s\S]*maxTilt=\{maxTilt\}/);
+  assert.match(glassCardSource, /spectrum-hero-card__surface/);
+  assert.equal(experienceSource.match(/<LayeredGlassCard/g)?.length, 5);
+  assert.equal(experienceSource.match(/<TiltCardItem depth=\{56\}>/g)?.length, 3);
+  assert.equal(experienceSource.match(/<TiltCardItem depth=\{96\}>/g)?.length, 8);
+  assert.match(experienceSource, />9 Classes<\/h2>/);
+  assert.match(experienceSource, />3 Rarities<\/h2>/);
+  assert.match(experienceSource, />16 Artists<\/h2>/);
+  assert.doesNotMatch(experienceSource, />16 Featured Artists<\/h2>/);
+  assert.doesNotMatch(experienceSource, /className="story-number">(?:09|03|16)</);
+  assert.match(
+    stylesSource,
+    /\.story-heading--single-line\s*{[^}]*white-space:\s*nowrap;/s,
+  );
+});
+
+test("classes and rarities keep mirrored perspective at rest", async () => {
+  const [experienceSource, glassCardSource, tiltCardSource] = await Promise.all([
+    readFile(experiencePath, "utf8"),
+    readFile(glassCardPath, "utf8"),
+    readFile(tiltCardPath, "utf8"),
+  ]);
+  const classesSource =
+    experienceSource.match(
+      /<StoryCardShell name="classes"[\s\S]*?<\/StoryCardShell>/,
+    )?.[0] ?? "";
+  const raritiesSource =
+    experienceSource.match(
+      /<StoryCardShell name="rarities"[\s\S]*?<\/StoryCardShell>/,
+    )?.[0] ?? "";
+
+  assert.match(classesSource, /<LayeredGlassCard restRotateY=\{8\}/);
+  assert.match(raritiesSource, /<LayeredGlassCard restRotateY=\{-8\}/);
+  assert.match(glassCardSource, /restRotateY=\{restRotateY\}/);
+  assert.match(tiltCardSource, /restRotateY\?: number/);
+  assert.match(
+    tiltCardSource,
+    /useTransform\(pointerRotateY, \(value\) => value \+ restRotateY\)/,
+    "pointer tilt must be additive around the authored resting perspective",
+  );
+  assert.match(
+    tiltCardSource,
+    /rotateY: shouldReduceMotion \? restRotateY : rotateY/,
+    "reduced motion should preserve the static perspective without pointer animation",
+  );
+});
+
+test("the artists card keeps a centered low-angle perspective", async () => {
+  const [experienceSource, glassCardSource, tiltCardSource, stylesSource] =
+    await Promise.all([
+      readFile(experiencePath, "utf8"),
+      readFile(glassCardPath, "utf8"),
+      readFile(tiltCardPath, "utf8"),
+      readFile(globalStylesPath, "utf8"),
+    ]);
+  const artistsSource =
+    experienceSource.match(
+      /<StoryCardShell name="artists"[\s\S]*?<\/StoryCardShell>/,
+    )?.[0] ?? "";
+
+  assert.match(
+    artistsSource,
+    /<LayeredGlassCard[\s\S]*restRotateX=\{10\}[\s\S]*maxTilt=\{4\}[\s\S]*perspective=\{650\}/,
+  );
+  assert.match(artistsSource, />16 Artists<\/h2>/);
+  assert.match(
+    artistsSource,
+    /1\/1 Special NFTs crafted by some of the greatest artists[\s\S]*<br \/>[\s\S]*in this space\. Each of them representing their own essence through an\s*ARMY soldier\./,
+  );
+  assert.match(glassCardSource, /restRotateX=\{restRotateX\}/);
+  assert.match(glassCardSource, /perspective=\{perspective\}/);
+  assert.match(tiltCardSource, /restRotateX\?: number/);
+  assert.match(
+    tiltCardSource,
+    /useTransform\(pointerRotateX, \(value\) => value \+ restRotateX\)/,
+  );
+  assert.match(
+    tiltCardSource,
+    /rotateX: shouldReduceMotion \? restRotateX : rotateX/,
+  );
+  assert.match(
+    stylesSource,
+    /\.glass-card--artists\s+:is\(h2, p\)\s*{[^}]*text-align:\s*center;/s,
+  );
+});
+
+test("opening story cards use three ordered content planes", async () => {
+  const [experienceSource, stylesSource] = await Promise.all([
+    readFile(experiencePath, "utf8"),
+    readFile(globalStylesPath, "utf8"),
+  ]);
+  const twoPathsSource =
+    experienceSource.match(
+      /<StoryCardShell name="two-paths"[\s\S]*?<\/StoryCardShell>/,
+    )?.[0] ?? "";
+  const firstDropSource =
+    experienceSource.match(
+      /<StoryCardShell\s+name="first-drop"[\s\S]*?<\/StoryCardShell>/,
+    )?.[0] ?? "";
+
+  for (const cardSource of [twoPathsSource, firstDropSource]) {
+    assert.match(cardSource, /<LayeredGlassCard/);
+    assert.match(cardSource, /<TiltCardItem as="span" depth=\{40\}>/);
+    assert.match(cardSource, /<TiltCardItem as="span" depth=\{72\}>/);
+    assert.match(cardSource, /<TiltCardItem depth=\{96\}>/);
+  }
+  assert.match(twoPathsSource, /Two packs,/);
+  assert.match(twoPathsSource, /Two paths/);
+  assert.match(firstDropSource, /First Drop:/);
+  assert.doesNotMatch(firstDropSource, /First Drop Reveal:/);
+  assert.match(firstDropSource, /Soldiers of the/);
+  assert.match(firstDropSource, /Ancient World/);
+  assert.match(
+    stylesSource,
+    /\.spectrum-layered-card__heading\s*{[^}]*transform-style:\s*preserve-3d;/s,
   );
 });
 

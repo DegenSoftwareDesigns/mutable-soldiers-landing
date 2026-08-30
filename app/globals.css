@@ -684,7 +684,7 @@ button {
   text-align: center;
 }
 
-.story-card--center .glass-card__content > p {
+.story-card--center .glass-card__content p {
   text-align: center;
   margin-inline: auto;
 }
@@ -700,6 +700,14 @@ button {
   font-size: clamp(3rem, 5.1vw, 6.1rem);
 }
 
+.glass-card--artists :is(h2, p) {
+  text-align: center;
+}
+
+.glass-card--artists p {
+  margin-inline: auto;
+}
+
 .glass-card--final h2 {
   text-align: center;
   font-size: clamp(3rem, 5.1vw, 6.2rem);
@@ -707,6 +715,18 @@ button {
 
 .spectrum-final-card-stage {
   width: 100%;
+}
+
+.spectrum-layered-card-stage {
+  width: 100%;
+}
+
+.spectrum-layered-card__heading {
+  transform-style: preserve-3d;
+}
+
+.story-heading--single-line {
+  white-space: nowrap;
 }
 
 .spectrum-final-card__heading {

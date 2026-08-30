@@ -31,6 +31,10 @@ export interface TiltCardProps {
   scale?: number
   /** CSS perspective distance in pixels. Default 1000 */
   perspective?: number
+  /** Resting rotation around the X axis in degrees. Default 0 */
+  restRotateX?: number
+  /** Resting rotation around the Y axis in degrees. Default 0 */
+  restRotateY?: number
   /** Show the pointer-following glare highlight. Default true */
   glare?: boolean
   /** Color at the center of the glare gradient */
@@ -84,6 +88,8 @@ export function TiltCard({
   tiltReverse = false,
   scale = 1.02,
   perspective = 1000,
+  restRotateX = 0,
+  restRotateY = 0,
   glare = true,
   glareColor = "rgba(255, 255, 255, 0.35)",
   containerClassName,
@@ -104,16 +110,18 @@ export function TiltCard({
   const cardScale = useSpring(1, TRACK_SPRING)
 
   const tiltSign = tiltReverse ? -1 : 1
-  const rotateX = useTransform(
+  const pointerRotateX = useTransform(
     tiltY,
     [0, 1],
     [maxTilt * tiltSign, -maxTilt * tiltSign],
   )
-  const rotateY = useTransform(
+  const rotateX = useTransform(pointerRotateX, (value) => value + restRotateX)
+  const pointerRotateY = useTransform(
     tiltX,
     [0, 1],
     [-maxTilt * tiltSign, maxTilt * tiltSign],
   )
+  const rotateY = useTransform(pointerRotateY, (value) => value + restRotateY)
   const glarePosX = useTransform(tiltX, (value) => value * 100)
   const glarePosY = useTransform(tiltY, (value) => value * 100)
   const glareBackground = useMotionTemplate`radial-gradient(circle at ${glarePosX}% ${glarePosY}%, ${glareColor}, transparent 65%)`
@@ -233,8 +241,8 @@ export function TiltCard({
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
         style={{
-          rotateX: shouldReduceMotion ? 0 : rotateX,
-          rotateY: shouldReduceMotion ? 0 : rotateY,
+          rotateX: shouldReduceMotion ? restRotateX : rotateX,
+          rotateY: shouldReduceMotion ? restRotateY : rotateY,
           scale: cardScale,
           transformStyle: "preserve-3d",
         }}
