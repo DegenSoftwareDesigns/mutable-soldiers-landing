@@ -20,7 +20,8 @@ export const storyChapters: readonly StoryChapter[] = [
   { id: "cinematic-rarities", label: "Cinematic after Rarities", range: [0.77, 0.84] },
   { id: "artists", label: "Featured Artists", range: [0.84, 0.88] },
   { id: "cinematic-finale", label: "Cinematic finale", range: [0.88, 0.94] },
-  { id: "final", label: "Ambient return and CTA", range: [0.94, 1] },
+  { id: "final", label: "Ambient return and CTA", range: [0.94, 0.97] },
+  { id: "footer", label: "Footer", range: [0.97, 1] },
 ] as const;
 
 export const uiWindows = {
@@ -30,7 +31,8 @@ export const uiWindows = {
   classes: [0.622, 0.658],
   rarities: [0.732, 0.768],
   artists: [0.842, 0.878],
-  final: [0.952, 1],
+  final: [0.94, 0.97],
+  footer: [0.97, 1],
 } as const satisfies Record<string, ProgressRange>;
 
 const cinematicFps = 30;

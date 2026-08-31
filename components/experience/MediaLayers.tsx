@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { assetByKey } from "@/lib/experience/assets";
+import type { ExperienceAssetSet } from "@/lib/experience/assets";
 import {
   cinematicTimeForProgress,
   experienceTuning,
@@ -13,11 +13,13 @@ import {
 import type { ExperienceProgressSignal } from "@/lib/experience/progress";
 
 type AmbientVideoProps = {
+  assetSet: ExperienceAssetSet;
   progressSignal: ExperienceProgressSignal;
   onSettled: (available: boolean) => void;
 };
 
 export function AmbientVideo({
+  assetSet,
   progressSignal,
   onSettled,
 }: AmbientVideoProps) {
@@ -74,7 +76,7 @@ export function AmbientVideo({
       <video
         ref={videoRef}
         className="ambient-video"
-        src={assetByKey.ambient.src}
+        src={assetSet.assets.ambient.src}
         autoPlay
         loop
         muted
@@ -102,12 +104,14 @@ function cinematicOpacity(progress: number) {
 }
 
 type CinematicVideoLayerProps = {
+  assetSet: ExperienceAssetSet;
   progressSignal: ExperienceProgressSignal;
   onStatusChange?: (status: CinematicVideoStatus) => void;
   onPreloadThreshold?: () => void;
 };
 
 export function CinematicVideoLayer({
+  assetSet,
   progressSignal,
   onStatusChange,
   onPreloadThreshold,
@@ -252,7 +256,7 @@ export function CinematicVideoLayer({
         <video
           ref={videoRef}
           className="cinematic-video"
-          src={assetByKey.cinematic.src}
+          src={assetSet.assets.cinematic.src}
           data-loaded={status === "ready" ? "true" : undefined}
           muted
           playsInline
@@ -260,7 +264,7 @@ export function CinematicVideoLayer({
         />
         <div ref={placeholderRef} className="cinematic-placeholder">
           <span>Missing development asset</span>
-          <strong>{assetByKey.cinematic.label}</strong>
+          <strong>{assetSet.assets.cinematic.label}</strong>
         </div>
       </div>
     </div>

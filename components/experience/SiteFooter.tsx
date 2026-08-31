@@ -8,7 +8,7 @@ const pendingPages = ["Artists", "Drops"] as const;
 const pendingCommunityLinks = ["Army X", "Telegram", "xrp.cafe"] as const;
 
 type SiteFooterProps = {
-  placement?: "story" | "page";
+  placement?: "story" | "page" | "closing";
 };
 
 function PendingFooterLink({ label }: { label: string }) {
@@ -70,6 +70,12 @@ export function SiteFooter({ placement = "story" }: SiteFooterProps) {
 
   if (placement === "page") {
     return <footer className="site-footer site-footer--page">{footerCard}</footer>;
+  }
+
+  if (placement === "closing") {
+    return (
+      <footer className="site-footer site-footer--closing">{footerCard}</footer>
+    );
   }
 
   return (

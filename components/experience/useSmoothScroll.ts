@@ -5,15 +5,19 @@ import Lenis from "lenis";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { experienceTuning } from "@/lib/experience/config";
+import type { ExperienceProfile } from "@/lib/experience/profile";
 
-export function useSmoothScroll(locked: boolean) {
+export function useSmoothScroll(
+  locked: boolean,
+  profile?: ExperienceProfile,
+) {
   const lenisRef = useRef<Lenis | null>(null);
 
   useEffect(() => {
     const reduceMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
-    if (reduceMotion) return;
+    if (reduceMotion || profile?.inputMode === "coarse") return;
 
     const lenis = new Lenis({
       autoRaf: false,
@@ -44,7 +48,14 @@ export function useSmoothScroll(locked: boolean) {
       lenis.destroy();
       lenisRef.current = null;
     };
-  }, []);
+  }, [profile?.inputMode]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("experience-is-locked", locked);
+    return () => {
+      document.documentElement.classList.remove("experience-is-locked");
+    };
+  }, [locked]);
 
   useEffect(() => {
     const lenis = lenisRef.current;

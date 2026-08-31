@@ -286,13 +286,14 @@ so the artwork is never cropped or distorted.
 
 ### Responsive behavior
 
-- At `760px` and below, the navbar becomes a two-row layout: brand and wallet
-  action on the first row, navigation spanning the second row.
-- Mobile width is `calc(100% - 2rem)` while the `32px` top offset remains.
-- At `440px` and below, retain the complete logo at the shared `2.75rem` height,
-  all four navigation items, and the wallet action.
-- Do not replace the navigation with a menu until the number or length of routes
-  makes the four-item row fail at the `320px` minimum supported width.
+- At `1024px` and above, desktop restores the authored three-column bar with
+  the complete brand, centered navigation, and wallet action visible inline.
+- Below `1024px`, tablet and mobile use the compact brand-and-menu bar. The
+  navigation and wallet action live in an accessible glass dropdown.
+- Explicit `tablet` and `mobile` experience profiles retain the compact menu
+  even when their landscape viewport is at least `1024px` wide.
+- Mobile width is `calc(100% - 2rem)` and safe-area insets determine the compact
+  top offset where applicable.
 
 ## Site footer
 

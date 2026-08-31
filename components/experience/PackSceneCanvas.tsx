@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { assetByKey } from "@/lib/experience/assets";
+import type { ExperienceAssetSet } from "@/lib/experience/assets";
 import {
   experienceTuning,
   packMotion,
@@ -11,6 +11,10 @@ import {
   smoothstep,
 } from "@/lib/experience/config";
 import type { ExperienceProgressSignal } from "@/lib/experience/progress";
+import {
+  maxDprForProfile,
+  type ExperienceProfile,
+} from "@/lib/experience/profile";
 
 export type PackSceneReady = {
   usingFallbacks: boolean;
@@ -18,6 +22,8 @@ export type PackSceneReady = {
 };
 
 type PackSceneCanvasProps = {
+  assetSet: ExperienceAssetSet;
+  profile: ExperienceProfile;
   progressSignal: ExperienceProgressSignal;
   debug?: boolean;
   onReady: (result: PackSceneReady) => void;
@@ -402,6 +408,7 @@ function updatePackState(
   progress: number,
   elapsed: number,
   reduceMotion: boolean,
+  layoutTuning: { xScale: number; objectScale: number; yOffset: number },
 ) {
   const reposition = rangeProgress(progress, packMotion.ranges.reposition);
   const permutation = rangeProgress(progress, packMotion.ranges.permutation);
@@ -425,13 +432,13 @@ function updatePackState(
     setNeutralBlend(packA, 0);
     setNeutralBlend(packB, 0);
     packA.transform.position.set(
-      packMotion.final.greenX,
-      packMotion.final.greenY,
+      packMotion.final.greenX * layoutTuning.xScale,
+      packMotion.final.greenY + layoutTuning.yOffset,
       0,
     );
     packB.transform.position.set(
-      packMotion.final.purpleX,
-      packMotion.final.purpleY,
+      packMotion.final.purpleX * layoutTuning.xScale,
+      packMotion.final.purpleY + layoutTuning.yOffset,
       packMotion.final.purpleZ,
     );
     const finalScale = lerp(
@@ -439,8 +446,8 @@ function updatePackState(
       packMotion.final.scaleTo,
       finalReveal,
     );
-    packA.transform.scale.setScalar(finalScale);
-    packB.transform.scale.setScalar(finalScale);
+    packA.transform.scale.setScalar(finalScale * layoutTuning.objectScale);
+    packB.transform.scale.setScalar(finalScale * layoutTuning.objectScale);
     packA.transform.rotation.set(
       packMotion.final.greenRotation[0],
       packMotion.final.greenRotation[1] +
@@ -476,8 +483,8 @@ function updatePackState(
   const baseBX = lerp(heroBX, spreadBX, reposition);
   const permutedAX = lerp(baseAX, packMotion.permutation.greenX, permutation);
   const permutedBX = lerp(baseBX, packMotion.permutation.purpleX, permutation);
-  const aX = lerp(permutedAX, 0, fusion);
-  const bX = lerp(permutedBX, 0, fusion);
+  const aX = lerp(permutedAX, 0, fusion) * layoutTuning.xScale;
+  const bX = lerp(permutedBX, 0, fusion) * layoutTuning.xScale;
   const earlyScale = lerp(
     packMotion.hero.scale,
     packMotion.spread.scale,
@@ -532,7 +539,7 @@ function updatePackState(
         permutationArc * packMotion.permutation.arcY,
       0,
       fusion,
-    ),
+    ) + layoutTuning.yOffset,
     lerp(greenPermutedZ, packMotion.fusion.greenZ, fusion),
   );
   packB.transform.position.set(
@@ -543,14 +550,18 @@ function updatePackState(
         permutationArc * packMotion.permutation.arcY,
       0,
       fusion,
-    ),
+    ) + layoutTuning.yOffset,
     lerp(purplePermutedZ, packMotion.fusion.purpleZ, fusion) +
       lerp(0, packMotion.fusion.zoomZ, zoom),
   );
   const breathingScale =
     1 + pulseEnvelope * pulse * packMotion.glow.scaleAmplitude;
-  packA.transform.scale.setScalar(fusedScale * breathingScale);
-  packB.transform.scale.setScalar(zoomScale * breathingScale);
+  packA.transform.scale.setScalar(
+    fusedScale * breathingScale * layoutTuning.objectScale,
+  );
+  packB.transform.scale.setScalar(
+    zoomScale * breathingScale * layoutTuning.objectScale,
+  );
   packA.transform.rotation.set(
     packMotion.presentation.greenRotation[0],
     lerp(packMotion.presentation.greenRotation[1], 0, fusion) +
@@ -593,6 +604,8 @@ function updatePackState(
 }
 
 export function PackSceneCanvas({
+  assetSet,
+  profile,
   progressSignal,
   debug = false,
   onReady,
@@ -617,23 +630,50 @@ export function PackSceneCanvas({
     const reducedMotionQuery = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     );
+    const interactionEnabled =
+      profile.device === "desktop" && profile.inputMode === "fine";
+    const dprCap = maxDprForProfile(profile);
+    const layoutTuning =
+      profile.device === "mobile"
+        ? {
+            fov: 42,
+            designZ: 8,
+            xScale: 0.5,
+            objectScale: 0.55,
+            yOffset: 1.25,
+          }
+        : profile.device === "tablet"
+          ? {
+              fov: 38,
+              designZ: 7.6,
+              xScale: 0.82,
+              objectScale: 0.9,
+              yOffset: 0,
+            }
+          : {
+              fov: experienceTuning.camera.fov,
+              designZ: experienceTuning.camera.designZ,
+              xScale: 1,
+              objectScale: 1,
+              yOffset: 0,
+            };
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(
-      experienceTuning.camera.fov,
+      layoutTuning.fov,
       1,
       experienceTuning.camera.near,
       experienceTuning.camera.far,
     );
-    camera.position.set(0, 0, experienceTuning.camera.designZ);
+    camera.position.set(0, 0, layoutTuning.designZ);
     camera.lookAt(0, 0, 0);
 
     const effectiveDpr = Math.min(
       window.devicePixelRatio,
-      experienceTuning.maxDpr,
+      dprCap,
     );
     const renderer = new THREE.WebGLRenderer({
-      antialias: effectiveDpr < experienceTuning.maxDpr,
+      antialias: effectiveDpr < dprCap,
       alpha: true,
       powerPreference: "high-performance",
     });
@@ -671,7 +711,13 @@ export function PackSceneCanvas({
     };
 
     const hitTestPack = (event: PointerEvent) => {
-      if (!packA || !packB || !heroIsActive() || !setPointerFromEvent(event)) {
+      if (
+        !interactionEnabled ||
+        !packA ||
+        !packB ||
+        !heroIsActive() ||
+        !setPointerFromEvent(event)
+      ) {
         return null;
       }
       const hitA = raycaster.intersectObject(packA.transform, true)[0];
@@ -796,14 +842,16 @@ export function PackSceneCanvas({
       if (event.pointerId === activeDrag?.pointerId) finishDrag();
     };
 
-    window.addEventListener("pointerdown", onPointerDown, { capture: true });
-    window.addEventListener("pointermove", onPointerMove, {
-      capture: true,
-      passive: false,
-    });
-    window.addEventListener("pointerup", onPointerUp, { capture: true });
-    window.addEventListener("pointercancel", onPointerUp, { capture: true });
-    window.addEventListener("blur", finishDrag);
+    if (interactionEnabled) {
+      window.addEventListener("pointerdown", onPointerDown, { capture: true });
+      window.addEventListener("pointermove", onPointerMove, {
+        capture: true,
+        passive: false,
+      });
+      window.addEventListener("pointerup", onPointerUp, { capture: true });
+      window.addEventListener("pointercancel", onPointerUp, { capture: true });
+      window.addEventListener("blur", finishDrag);
+    }
 
     const hemisphere = new THREE.HemisphereLight(
       0xbcc9ff,
@@ -863,7 +911,7 @@ export function PackSceneCanvas({
       if (width <= 0 || height <= 0) return;
       renderer.setSize(width, height, false);
       renderer.setPixelRatio(
-        Math.min(window.devicePixelRatio, experienceTuning.maxDpr),
+        Math.min(window.devicePixelRatio, dprCap),
       );
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
@@ -893,6 +941,7 @@ export function PackSceneCanvas({
           progress,
           elapsed,
           reducedMotionQuery.matches,
+          layoutTuning,
         );
         const heroActive = heroIsActive();
         applyPackDrag(
@@ -967,8 +1016,8 @@ export function PackSceneCanvas({
     const unsubscribeProgress = progressSignal.subscribe(syncRenderActivity);
 
     Promise.all([
-      loadPack(assetByKey.packA.src, cyan),
-      loadPack(assetByKey.packB.src, violet),
+      loadPack(assetSet.assets.packA.src, cyan),
+      loadPack(assetSet.assets.packB.src, violet),
     ]).then(([resultA, resultB]) => {
       if (disposed) {
         disposeObject(resultA.pack.transform);
@@ -1023,7 +1072,7 @@ export function PackSceneCanvas({
       renderer.domElement.remove();
       scene.clear();
     };
-  }, [debug, progressSignal]);
+  }, [assetSet, debug, profile, progressSignal]);
 
   return <div ref={hostRef} className="pack-canvas" aria-hidden="true" />;
 }

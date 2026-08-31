@@ -1,8 +1,10 @@
-export type AssetKey =
-  | "ambient"
-  | "packA"
-  | "packB"
-  | "cinematic";
+import type {
+  ExperienceAspectBucket,
+  ExperienceDevice,
+  ExperienceProfile,
+} from "./profile";
+
+export type AssetKey = "ambient" | "packA" | "packB" | "cinematic";
 
 export type ExperienceAsset = {
   key: AssetKey;
@@ -10,6 +12,20 @@ export type ExperienceAsset = {
   src: string;
   critical: boolean;
   label: string;
+  width?: number;
+  height?: number;
+  poster?: string;
+  focalPoint?: readonly [x: number, y: number];
+  safeArea?: readonly [top: number, right: number, bottom: number, left: number];
+};
+
+export type ExperienceAssetSet = {
+  id: string;
+  device: ExperienceDevice;
+  aspectBucket: ExperienceAspectBucket;
+  targetRatio: string;
+  usesDesktopFallbacks: boolean;
+  assets: Record<AssetKey, ExperienceAsset>;
 };
 
 export const experienceAssets: readonly ExperienceAsset[] = [
@@ -19,6 +35,10 @@ export const experienceAssets: readonly ExperienceAsset[] = [
     src: "/assets/bg-video-16-9.webm",
     critical: true,
     label: "Ambient background",
+    width: 2560,
+    height: 1440,
+    focalPoint: [0.5, 0.5],
+    safeArea: [0.08, 0.08, 0.08, 0.08],
   },
   {
     key: "packA",
@@ -44,9 +64,36 @@ export const experienceAssets: readonly ExperienceAsset[] = [
     src: "/assets/scenes-cinematic.mp4",
     critical: false,
     label: "Cinematic sequence",
+    width: 2560,
+    height: 1440,
+    focalPoint: [0.5, 0.5],
+    safeArea: [0.1, 0.08, 0.1, 0.08],
   },
 ] as const;
 
 export const assetByKey = Object.fromEntries(
   experienceAssets.map((asset) => [asset.key, asset]),
 ) as Record<AssetKey, ExperienceAsset>;
+
+function targetRatioForProfile(profile: ExperienceProfile) {
+  if (profile.orientation === "landscape") return "16:9";
+  if (profile.device === "tablet") return "3:4";
+  if (profile.device === "mobile") {
+    return profile.aspectBucket === "portrait-tall" ? "9:19.5" : "9:16";
+  }
+  return "16:9";
+}
+
+export function selectExperienceAssets(
+  profile: ExperienceProfile,
+): ExperienceAssetSet {
+  return {
+    id: `${profile.device}-${profile.aspectBucket}`,
+    device: profile.device,
+    aspectBucket: profile.aspectBucket,
+    targetRatio: targetRatioForProfile(profile),
+    usesDesktopFallbacks:
+      profile.device !== "desktop" || profile.aspectBucket === "landscape-wide",
+    assets: assetByKey,
+  };
+}

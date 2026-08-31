@@ -37,6 +37,8 @@ export interface TiltCardProps {
   restRotateY?: number
   /** Show the pointer-following glare highlight. Default true */
   glare?: boolean
+  /** Enable pointer tilt, hover lift, scale and glare. Default true */
+  interactive?: boolean
   /** Color at the center of the glare gradient */
   glareColor?: string
   /** Classes for the outer perspective wrapper */
@@ -91,6 +93,7 @@ export function TiltCard({
   restRotateX = 0,
   restRotateY = 0,
   glare = true,
+  interactive = true,
   glareColor = "rgba(255, 255, 255, 0.35)",
   containerClassName,
   className,
@@ -186,23 +189,23 @@ export function TiltCard({
 
   const handlePointerMove = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
-      if (event.pointerType !== "mouse" || shouldReduceMotion) return
+      if (!interactive || event.pointerType !== "mouse" || shouldReduceMotion) return
       pointerPosition.current = { x: event.clientX, y: event.clientY }
       const rect = event.currentTarget.getBoundingClientRect()
       animate(tiltX, (event.clientX - rect.left) / rect.width, TRACK_SPRING)
       animate(tiltY, (event.clientY - rect.top) / rect.height, TRACK_SPRING)
     },
-    [tiltX, tiltY, shouldReduceMotion],
+    [interactive, tiltX, tiltY, shouldReduceMotion],
   )
 
   const handlePointerEnter = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
-      if (event.pointerType !== "mouse" || shouldReduceMotion) return
+      if (!interactive || event.pointerType !== "mouse" || shouldReduceMotion) return
       pointerPosition.current = { x: event.clientX, y: event.clientY }
       setHovered(true)
       cardScale.set(scale)
     },
-    [cardScale, scale, shouldReduceMotion],
+    [cardScale, interactive, scale, shouldReduceMotion],
   )
 
   const handlePointerLeave = useCallback(() => {
@@ -234,12 +237,12 @@ export function TiltCard({
     >
       <motion.div
         ref={cardRef}
-        onPointerMove={handlePointerMove}
-        onPointerEnter={handlePointerEnter}
-        onPointerLeave={handlePointerLeave}
-        onPointerDown={handlePointerDown}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
+        onPointerMove={interactive ? handlePointerMove : undefined}
+        onPointerEnter={interactive ? handlePointerEnter : undefined}
+        onPointerLeave={interactive ? handlePointerLeave : undefined}
+        onPointerDown={interactive ? handlePointerDown : undefined}
+        onPointerUp={interactive ? handlePointerUp : undefined}
+        onPointerCancel={interactive ? handlePointerUp : undefined}
         style={{
           rotateX: shouldReduceMotion ? restRotateX : rotateX,
           rotateY: shouldReduceMotion ? restRotateY : rotateY,
@@ -262,7 +265,7 @@ export function TiltCard({
           </div>
         </TiltCardContext.Provider>
 
-        {glare && !shouldReduceMotion && (
+        {interactive && glare && !shouldReduceMotion && (
           <motion.div
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 rounded-[inherit]"

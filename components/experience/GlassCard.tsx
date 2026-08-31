@@ -40,6 +40,7 @@ type LayeredGlassCardProps = {
   perspective?: number;
   restRotateX?: number;
   restRotateY?: number;
+  interactive?: boolean;
 };
 
 export function LayeredGlassCard({
@@ -49,6 +50,7 @@ export function LayeredGlassCard({
   perspective = 1000,
   restRotateX = 0,
   restRotateY = 0,
+  interactive = true,
 }: LayeredGlassCardProps) {
   return (
     <TiltCard
@@ -62,6 +64,7 @@ export function LayeredGlassCard({
       perspective={perspective}
       restRotateX={restRotateX}
       restRotateY={restRotateY}
+      interactive={interactive}
       unstyled
     >
       <div
@@ -75,14 +78,26 @@ export function LayeredGlassCard({
   );
 }
 
-type CTAButtonProps = {
+type CTAButtonProps = Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  "children"
+> & {
   children: React.ReactNode;
   variant?: "primary" | "secondary";
 };
 
-export function CTAButton({ children, variant = "primary" }: CTAButtonProps) {
+export function CTAButton({
+  children,
+  variant = "primary",
+  className,
+  ...buttonProps
+}: CTAButtonProps) {
   return (
-    <button className={`cta-button cta-button--${variant}`} type="button">
+    <button
+      className={cn("cta-button", `cta-button--${variant}`, className)}
+      type="button"
+      {...buttonProps}
+    >
       <span>{children}</span>
     </button>
   );

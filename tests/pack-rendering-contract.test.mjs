@@ -119,8 +119,8 @@ test("the purple pack remains the visible fusion survivor", async () => {
   assert.match(source, /setOpacity\(packB,\s*1\)/);
   assert.match(
     source,
-    /packB\.transform\.scale\.setScalar\(zoomScale \* breathingScale\)/,
-    "the foreground purple pack must own the final zoom",
+    /packB\.transform\.scale\.setScalar\(\s*zoomScale \*\s*breathingScale \*\s*layoutTuning\.objectScale,?\s*\)/,
+    "the foreground purple pack must own the final zoom while respecting the profile scale",
   );
   assert.match(
     source,
@@ -248,7 +248,7 @@ test("native wheel progress is not replaced by chapter navigation", async () => 
   );
 });
 
-test("the floating glass navbar keeps its authored navigation contract", async () => {
+test("the floating glass navbar keeps desktop inline and compact devices collapsible", async () => {
   const [navbarSource, experienceSource, stylesSource] = await Promise.all([
     readFile(navbarPath, "utf8"),
     readFile(experiencePath, "utf8"),
@@ -261,17 +261,29 @@ test("the floating glass navbar keeps its authored navigation contract", async (
   assert.match(navbarSource, /href="\/#hero"/);
   assert.match(navbarSource, /href="\/waitlist"/);
   assert.match(navbarSource, /\["Artists", "Drops"\]/);
-  assert.match(navbarSource, /<CTAButton>Connect Wallet<\/CTAButton>/);
+  assert.match(navbarSource, /<CTAButton[\s\S]*?Connect Wallet/);
   assert.match(navbarSource, /disabled/);
-  assert.match(experienceSource, /<main id="hero"/);
-  assert.match(experienceSource, /<SiteNavbar \/>/);
+  assert.match(navbarSource, /aria-expanded=\{menuOpen\}/);
+  assert.match(navbarSource, /aria-controls="site-navigation-panel"/);
+  assert.match(navbarSource, /event\.key !== "Escape"/);
+  assert.match(navbarSource, /shellRef\.current\?\.contains/);
+  assert.match(navbarSource, /site-navbar-nav--desktop/);
+  assert.match(navbarSource, /site-navbar-nav--menu/);
+  assert.match(navbarSource, /data-device=\{device\}/);
+  assert.match(experienceSource, /<SiteNavbar device=\{layoutProfile\.device\} \/>/);
+  assert.match(stylesSource, /@media \(min-width: 64rem\)/);
+  assert.match(
+    stylesSource,
+    /\.site-navbar-shell:not\(\[data-device="mobile"\]\):not\(\[data-device="tablet"\]\)/,
+  );
+  assert.match(experienceSource, /<main[\s\S]*?id="hero"/);
   assert.match(
     stylesSource,
     /\.site-navbar-shell\s*{[^}]*position:\s*sticky;[^}]*top:\s*2rem;/s,
   );
 });
 
-test("the hero card stays inside the same wide-screen shell as the navbar", async () => {
+test("the hero and desktop navbar share the wide-screen shell", async () => {
   const [experienceSource, stylesSource, tiltCardSource] = await Promise.all([
     readFile(experiencePath, "utf8"),
     readFile(globalStylesPath, "utf8"),
@@ -343,8 +355,13 @@ test("the hero card stays inside the same wide-screen shell as the navbar", asyn
   );
   assert.match(
     stylesSource,
-    /\.site-navbar-shell\s*{[^}]*width:[^;]*var\(--experience-shell-max\)/s,
-    "the navbar must use the shared shell",
+    /\.site-navbar-shell\s*\{[^}]*width:\s*min\(calc\(100% - 4rem\),\s*30rem\)/s,
+    "compact profiles need the deliberately narrow menu surface",
+  );
+  assert.match(
+    stylesSource,
+    /\.site-navbar-shell:not\(\[data-device="mobile"\]\):not\(\[data-device="tablet"\]\)\s*\{[^}]*width:\s*min\(calc\(100% - 4rem\),\s*var\(--experience-shell-max\)\)/s,
+    "desktop restores the authored full-width navigation shell",
   );
   assert.match(
     stylesSource,
@@ -398,8 +415,8 @@ test("classes and rarities keep mirrored perspective at rest", async () => {
       /<StoryCardShell name="rarities"[\s\S]*?<\/StoryCardShell>/,
     )?.[0] ?? "";
 
-  assert.match(classesSource, /<LayeredGlassCard restRotateY=\{8\}/);
-  assert.match(raritiesSource, /<LayeredGlassCard restRotateY=\{-8\}/);
+  assert.match(classesSource, /<LayeredGlassCard[\s\S]*?restRotateY=\{8\}/);
+  assert.match(raritiesSource, /<LayeredGlassCard[\s\S]*?restRotateY=\{-8\}/);
   assert.match(glassCardSource, /restRotateY=\{restRotateY\}/);
   assert.match(tiltCardSource, /restRotateY\?: number/);
   assert.match(
@@ -485,7 +502,7 @@ test("opening story cards use three ordered content planes", async () => {
   );
 });
 
-test("the final scene includes a responsive glass footer on the shared shell", async () => {
+test("the final CTA and footer scroll as separate sections over the loop", async () => {
   const [footerSource, experienceSource, stylesSource] = await Promise.all([
     readFile(footerPath, "utf8"),
     readFile(experiencePath, "utf8"),
@@ -499,11 +516,11 @@ test("the final scene includes a responsive glass footer on the shared shell", a
   assert.match(footerSource, /\["Artists", "Drops"\]/);
   assert.match(footerSource, /\["Army X", "Telegram", "xrp\.cafe"\]/);
   assert.match(footerSource, /disabled/);
-  assert.match(experienceSource, /footer:\s*uiWindows\.final/);
-  assert.match(experienceSource, /<SiteFooter \/>/);
+  assert.match(experienceSource, /footer:\s*uiWindows\.footer/);
+  assert.match(experienceSource, /<SiteFooter placement="closing" \/>/);
   assert.match(
     experienceSource,
-    /StoryCardShell name="final"[\s\S]*?<TiltCard[\s\S]*?className="glass-card glass-card--final spectrum-hero-card spectrum-final-card"/,
+    /closing-section closing-section--cta[\s\S]*?<TiltCard[\s\S]*?className="glass-card glass-card--final spectrum-hero-card spectrum-final-card"/,
   );
   assert.match(
     experienceSource,
@@ -515,45 +532,46 @@ test("the final scene includes a responsive glass footer on the shared shell", a
   );
   assert.match(
     experienceSource,
-    /StoryCardShell name="final"[\s\S]*?<TiltCardItem depth=\{96\}>[\s\S]*?<CTAButton>Join the WaitList<\/CTAButton>/,
+    /closing-section closing-section--cta[\s\S]*?<TiltCardItem depth=\{96\}>[\s\S]*?<CTAButton>Join the WaitList<\/CTAButton>/,
   );
-  assert.match(experienceSource, /\[data-card="footer"\] \[data-card-motion\]/);
+  assert.match(experienceSource, /className="closing-track" data-closing-track/);
+  assert.match(
+    experienceSource,
+    /const storyEndPosition[\s\S]*scrollRoot\.scrollHeight[\s\S]*window\.innerHeight \* 2/,
+    "the authored story must finish where the two closing sections begin",
+  );
+  assert.match(
+    stylesSource,
+    /\.closing-overlay\s*\{[^}]*position:\s*absolute;[^}]*bottom:\s*0;[^}]*height:\s*200svh;/s,
+    "the closing content must scroll naturally over the sticky media stage",
+  );
+  assert.match(
+    stylesSource,
+    /\.closing-track\s*\{[^}]*position:\s*relative;[^}]*height:\s*200svh;/s,
+  );
+  assert.match(
+    stylesSource,
+    /\.closing-section\s*\{[^}]*min-height:\s*100svh;/s,
+  );
   assert.doesNotMatch(
-    experienceSource,
-    /reveal\(\s*'\[data-card="(?:final|footer)"\]/,
-    "the final CTA and footer must not inherit the perspective reveal",
-  );
-  assert.match(
-    experienceSource,
-    /revealFlat\(\s*'\[data-card="footer"\]/,
-    "the footer must enter through the flat reveal path",
-  );
-  assert.match(
-    experienceSource,
-    /revealFlat\(\s*'\[data-card="final"\]/,
-    "the final CTA must enter through the flat reveal path",
-  );
-  assert.match(
-    experienceSource,
-    /const revealFlat[\s\S]*rotation:\s*0,[\s\S]*skewX:\s*0,[\s\S]*skewY:\s*0,/,
-    "the flat reveal must clear GSAP's decomposed 2D rotation and skew",
+    stylesSource,
+    /\[data-orientation="portrait"\]\s+\[data-card="(?:hero|two-paths|first-drop|classes|rarities|artists|final)"\]/,
+    "responsive story-card positioning must not leak into the closing sections",
   );
   assert.match(
     stylesSource,
-    /\.site-footer\s*{[^}]*width:[^;]*var\(--experience-shell-max\)/s,
+    /\.ambient-video,\s*\.cinematic-video\s*\{[^}]*position:\s*absolute;/s,
   );
-  assert.match(
-    stylesSource,
-    /\.site-footer__motion\s*{[^}]*transform-style:\s*flat;/s,
+  const webglLayerTweens =
+    experienceSource.match(
+      /timeline\.to\(\s*'\[data-layer="webgl"\]'[\s\S]*?\n\s*\);/g,
+    ) ?? [];
+  assert.equal(
+    webglLayerTweens.length,
+    1,
+    "the closing sections should retain only the ambient loop, not the 3D packs",
   );
-  assert.match(
-    stylesSource,
-    /\.glass-card-stage--flat\s*{[^}]*perspective:\s*none;/s,
-  );
-  assert.match(
-    stylesSource,
-    /\.glass-card--flat-surface\s*{[^}]*transform:\s*none\s*!important;/s,
-  );
+  assert.match(webglLayerTweens[0], /opacity:\s*0/);
 });
 
 test("the waitlist route reuses the landing system for an accessible XRPL lookup", async () => {
