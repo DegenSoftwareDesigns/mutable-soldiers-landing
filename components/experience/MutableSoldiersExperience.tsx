@@ -544,11 +544,13 @@ function ExperienceRuntime({
       const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
       const narrativeEnd = Math.max(
         rootTop,
-        maxScroll - window.innerHeight,
+        rootTop +
+          (scrollRoot.querySelector<HTMLElement>('[data-layer="closing"]')
+            ?.offsetTop ?? maxScroll - rootTop),
       );
       const targetScroll =
         preview.chapter === "final"
-          ? maxScroll - window.innerHeight
+          ? narrativeEnd
           : preview.chapter === "footer"
             ? maxScroll
             : rootTop + (narrativeEnd - rootTop) * targetProgress;
@@ -581,7 +583,10 @@ function ExperienceRuntime({
 
       const cards = gsap.utils.toArray<HTMLElement>("[data-card-motion]");
       gsap.set(cards, {
-        autoAlpha: 0,
+        rotationZ: 0,
+        skewX: 0,
+        skewY: 0,
+        visibility: "hidden",
         y: uiMotion.enterY,
         z: uiMotion.enterZ,
         scale: uiMotion.enterScale,
@@ -590,7 +595,7 @@ function ExperienceRuntime({
         transformOrigin: "50% 50%",
       });
       gsap.set('[data-card="hero"] [data-card-motion]', {
-        autoAlpha: 1,
+        visibility: "inherit",
         y: 0,
         z: 0,
         scale: 1,
@@ -624,7 +629,7 @@ function ExperienceRuntime({
             timeline.fromTo(
               selector,
               {
-                autoAlpha: 0,
+                "--story-reveal": "0",
                 y: reduceMotion ? 0 : uiMotion.enterY,
                 z: reduceMotion ? 0 : uiMotion.enterZ,
                 scale: reduceMotion ? 1 : uiMotion.enterScale,
@@ -634,7 +639,8 @@ function ExperienceRuntime({
                   : uiMotion.enterRotationY * yawDirection,
               },
               {
-                autoAlpha: 1,
+                "--story-reveal": "1",
+                visibility: "inherit",
                 y: 0,
                 z: 0,
                 scale: 1,
@@ -649,7 +655,7 @@ function ExperienceRuntime({
               timeline.to(
                 selector,
                 {
-                  autoAlpha: 0,
+                  "--story-reveal": "0",
                   y: reduceMotion ? 0 : uiMotion.exitY,
                   z: reduceMotion ? 0 : uiMotion.exitZ,
                   scale: reduceMotion ? 1 : uiMotion.exitScale,
@@ -659,13 +665,14 @@ function ExperienceRuntime({
                 },
                 end - transitionDuration,
               );
+              timeline.set(selector, { visibility: "hidden" }, end);
             }
           };
 
           timeline.to(
             '[data-card="hero"] [data-card-motion]',
             {
-              autoAlpha: 0,
+              "--story-reveal": "0",
               y: reduceMotion ? 0 : uiMotion.heroExitY,
               z: reduceMotion ? 0 : uiMotion.heroExitZ,
               scale: reduceMotion ? 1 : uiMotion.heroExitScale,
@@ -674,6 +681,11 @@ function ExperienceRuntime({
               duration: transitionDuration * 1.5,
             },
             uiWindows.hero[1] - transitionDuration * 1.5,
+          );
+          timeline.set(
+            '[data-card="hero"] [data-card-motion]',
+            { visibility: "hidden" },
+            uiWindows.hero[1],
           );
           reveal(
             '[data-card="two-paths"] [data-card-motion]',
@@ -731,6 +743,17 @@ function ExperienceRuntime({
             layerTransitions.cinematicToAmbient[0],
           );
 
+          timeline.to(
+            '[data-layer="webgl"]',
+            {
+              opacity: 1,
+              duration:
+                layerTransitions.cinematicToAmbient[1] -
+                layerTransitions.cinematicToAmbient[0],
+            },
+            layerTransitions.cinematicToAmbient[0],
+          );
+
           timeline.eventCallback("onUpdate", () => {
             progressSignal.set(timeline.progress());
           });
@@ -739,8 +762,8 @@ function ExperienceRuntime({
             Math.max(
               0,
               scrollRoot.offsetTop +
-                scrollRoot.scrollHeight -
-                window.innerHeight * 2,
+                (scrollRoot.querySelector<HTMLElement>('[data-layer="closing"]')
+                  ?.offsetTop ?? scrollRoot.scrollHeight),
             );
 
           const trigger = ScrollTrigger.create({
@@ -774,9 +797,8 @@ function ExperienceRuntime({
       : profile.device === "tablet"
         ? 1250
         : experienceTuning.scrollLengthVh;
-  const closingScrollLengthVh = 200;
   const style = {
-    "--experience-scroll-vh": `${storyScrollLengthVh + closingScrollLengthVh}vh`,
+    "--experience-scroll-vh": `${storyScrollLengthVh}vh`,
     "--experience-story-vh": `${storyScrollLengthVh}vh`,
   } as CSSProperties;
   const chapter = currentChapter(diagnosticProgress);

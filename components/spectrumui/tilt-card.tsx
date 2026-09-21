@@ -192,20 +192,23 @@ export function TiltCard({
       if (!interactive || event.pointerType !== "mouse" || shouldReduceMotion) return
       pointerPosition.current = { x: event.clientX, y: event.clientY }
       const rect = event.currentTarget.getBoundingClientRect()
-      animate(tiltX, (event.clientX - rect.left) / rect.width, TRACK_SPRING)
-      animate(tiltY, (event.clientY - rect.top) / rect.height, TRACK_SPRING)
+      if (!rect.width || !rect.height) return
+      const x = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width))
+      const y = Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height))
+      setHovered(true)
+      cardScale.set(scale)
+      animate(tiltX, x, TRACK_SPRING)
+      animate(tiltY, y, TRACK_SPRING)
     },
-    [interactive, tiltX, tiltY, shouldReduceMotion],
+    [cardScale, interactive, scale, tiltX, tiltY, shouldReduceMotion],
   )
 
   const handlePointerEnter = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
       if (!interactive || event.pointerType !== "mouse" || shouldReduceMotion) return
-      pointerPosition.current = { x: event.clientX, y: event.clientY }
-      setHovered(true)
-      cardScale.set(scale)
+      handlePointerMove(event)
     },
-    [cardScale, interactive, scale, shouldReduceMotion],
+    [handlePointerMove, interactive, shouldReduceMotion],
   )
 
   const handlePointerLeave = useCallback(() => {
@@ -221,6 +224,17 @@ export function TiltCard({
     animate(tiltY, REST_POINT, RESET_SPRING)
   }, [cardScale, setInteractiveHover, tiltX, tiltY])
 
+  // Scrolling can replace the card beneath a stationary cursor. Discard that
+  // hover state rather than carrying an old tilt into a new chapter.
+  useEffect(() => {
+    window.addEventListener("scroll", handlePointerLeave, { passive: true })
+    window.addEventListener("blur", handlePointerLeave)
+    return () => {
+      window.removeEventListener("scroll", handlePointerLeave)
+      window.removeEventListener("blur", handlePointerLeave)
+    }
+  }, [handlePointerLeave])
+
   const handlePointerDown = useCallback(() => {
     if (shouldReduceMotion) return
     cardScale.set(PRESS_SCALE)
@@ -234,15 +248,15 @@ export function TiltCard({
     <div
       className={cn("relative", containerClassName)}
       style={{ perspective: `${perspective}px` }}
+      onPointerMove={interactive ? handlePointerMove : undefined}
+      onPointerEnter={interactive ? handlePointerEnter : undefined}
+      onPointerLeave={interactive ? handlePointerLeave : undefined}
+      onPointerDown={interactive ? handlePointerDown : undefined}
+      onPointerUp={interactive ? handlePointerUp : undefined}
+      onPointerCancel={interactive ? handlePointerLeave : undefined}
     >
       <motion.div
         ref={cardRef}
-        onPointerMove={interactive ? handlePointerMove : undefined}
-        onPointerEnter={interactive ? handlePointerEnter : undefined}
-        onPointerLeave={interactive ? handlePointerLeave : undefined}
-        onPointerDown={interactive ? handlePointerDown : undefined}
-        onPointerUp={interactive ? handlePointerUp : undefined}
-        onPointerCancel={interactive ? handlePointerUp : undefined}
         style={{
           rotateX: shouldReduceMotion ? restRotateX : rotateX,
           rotateY: shouldReduceMotion ? restRotateY : rotateY,
@@ -250,7 +264,7 @@ export function TiltCard({
           transformStyle: "preserve-3d",
         }}
         className={cn(
-          "relative will-change-transform",
+          "relative will-change-transform pointer-events-none [&_button]:pointer-events-auto [&_a]:pointer-events-auto [&_[role=button]]:pointer-events-auto",
           !unstyled &&
             "rounded-2xl border border-neutral-200 bg-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.04),0px_2px_4px_0px_rgba(0,0,0,0.04)]",
           !unstyled && "dark:border-neutral-800 dark:bg-neutral-900 dark:shadow-none",

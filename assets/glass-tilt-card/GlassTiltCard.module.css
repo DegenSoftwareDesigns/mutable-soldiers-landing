@@ -79,15 +79,9 @@
 .glassTint {
   position: absolute;
   inset: 0;
-  backdrop-filter: url(#glass-distortion) blur(clamp(52px, 4.2vw, 68px)) saturate(106%) brightness(0.92);
-  -webkit-backdrop-filter: blur(clamp(52px, 4.2vw, 68px)) saturate(106%) brightness(0.92);
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.1) 0%,
-    rgba(8, 9, 18, 0.22) 32%,
-    rgba(6, 7, 16, 0.5) 70%,
-    rgba(3, 4, 11, 0.72) 100%
-  );
+  backdrop-filter: var(--glass-backdrop);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  background: var(--glass-tint);
 }
 
 /* capa 2 de vidrio: tinte desplazado que conserva la sensación de grosor

@@ -4,9 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { GlassTiltCard } from "@/assets/glass-tilt-card";
 import type { ExperienceDevice } from "@/lib/experience/profile";
-import { CTAButton } from "./GlassCard";
+import { CTAButton, StaticGlassCard } from "./GlassCard";
 
 const pendingPages = ["Artists", "Drops"] as const;
 
@@ -58,12 +57,9 @@ export function SiteNavbar({ device }: SiteNavbarProps = {}) {
 
   return (
     <header className="site-navbar-shell" data-device={device} ref={shellRef}>
-      <GlassTiltCard
+      <StaticGlassCard
         className="site-navbar-glass"
         cardClassName="site-navbar-surface"
-        contentMode="intrinsic"
-        idleFloat={false}
-        interactive={false}
       >
         <div className="site-navbar-inner">
           <Link className="site-navbar-brand" href="/#hero" aria-label="Mutable Soldiers home">
@@ -127,19 +123,16 @@ export function SiteNavbar({ device }: SiteNavbarProps = {}) {
             </span>
           </button>
         </div>
-      </GlassTiltCard>
+      </StaticGlassCard>
 
       <div
         id="site-navigation-panel"
         className={`site-navbar-panel ${menuOpen ? "is-open" : ""}`}
         aria-hidden={!menuOpen}
       >
-        <GlassTiltCard
+        <StaticGlassCard
           className="site-navbar-panel__glass"
           cardClassName="site-navbar-panel__surface"
-          contentMode="intrinsic"
-          idleFloat={false}
-          interactive={false}
         >
           <div className="site-navbar-panel__inner">
             <nav
@@ -187,7 +180,7 @@ export function SiteNavbar({ device }: SiteNavbarProps = {}) {
               </CTAButton>
             </div>
           </div>
-        </GlassTiltCard>
+        </StaticGlassCard>
       </div>
     </header>
   );

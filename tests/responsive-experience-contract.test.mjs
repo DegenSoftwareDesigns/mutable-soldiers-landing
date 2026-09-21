@@ -42,6 +42,8 @@ test("touch profiles use native scroll and static cards", async () => {
   ]);
 
   assert.match(smoothScroll, /profile\?\.inputMode === "coarse"/);
+  assert.match(smoothScroll, /window\.history\.scrollRestoration = "manual"/);
+  assert.match(smoothScroll, /window\.scrollTo\(\{ top: 0, behavior: "instant" \}\)/);
   assert.match(
     experience,
     /profile\.device === "desktop" && profile\.inputMode === "fine"/,
@@ -66,7 +68,7 @@ test("responsive preview is development-only and uses real iframe viewports", as
   assert.match(workbench, /experiencePreview: "1"/);
   assert.match(
     experience,
-    /const narrativeEnd[\s\S]*maxScroll - window\.innerHeight[\s\S]*targetProgress/,
+    /const narrativeEnd[\s\S]*\[data-layer="closing"\][\s\S]*offsetTop[\s\S]*targetProgress/,
   );
   assert.match(styles, /data-device="mobile"\]\[data-orientation="portrait"\]/);
   assert.match(styles, /data-device="tablet"\]\[data-orientation="portrait"\]/);

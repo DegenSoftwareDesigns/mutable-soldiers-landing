@@ -9,6 +9,15 @@
   --muted: rgba(247, 246, 255, 0.76);
   --glass: rgba(20, 18, 31, 0.54);
   --glass-border: rgba(255, 255, 255, 0.24);
+  --glass-blur: 14px;
+  --glass-backdrop: blur(var(--glass-blur)) saturate(106%);
+  --glass-tint: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(8, 9, 18, 0.14) 32%,
+    rgba(6, 7, 16, 0.28) 70%,
+    rgba(3, 4, 11, 0.42) 100%
+  );
   --violet: #8c3cff;
   --cyan: #24ebe0;
   --experience-shell-max: 112rem;
@@ -199,20 +208,15 @@ button {
 
 /* The loop remains anchored in the sticky stage while only the closing content scrolls. */
 .closing-overlay {
-  position: absolute;
+  position: relative;
   z-index: 5;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  height: 200vh;
-  height: 200svh;
+  margin-top: calc(var(--experience-story-vh, 1500vh) - 100svh);
   pointer-events: none;
   perspective: 1400px;
 }
 
 .closing-track {
   position: relative;
-  height: 200svh;
 }
 
 .closing-section {
@@ -231,6 +235,12 @@ button {
 .closing-section--cta .spectrum-final-card-stage {
   width: min(58vw, 69rem);
   pointer-events: auto;
+}
+
+.closing-section--footer {
+  min-height: 0;
+  padding-top: clamp(1.5rem, 4svh, 3rem);
+  padding-bottom: max(clamp(1.5rem, 4svh, 3rem), env(safe-area-inset-bottom));
 }
 
 .site-footer--closing {
@@ -698,18 +708,28 @@ button {
   position: absolute;
   display: flex;
   pointer-events: none;
-  transform-style: preserve-3d;
+  transform-style: flat;
 }
 
 .story-card__motion {
+  --story-reveal: 0;
   width: 100%;
   visibility: hidden;
-  transform-style: preserve-3d;
-  backface-visibility: hidden;
+  transform-style: flat;
 }
 
 .story-card[data-card-active="true"] .story-card__motion {
-  will-change: transform, opacity;
+  /* An opacity backdrop root would prevent the glass from sampling the media. */
+  will-change: transform;
+}
+
+.story-card[data-card="hero"] .story-card__motion {
+  --story-reveal: 1;
+}
+
+/* Fade the glass itself and its sibling content, never a backdrop ancestor. */
+.story-card__motion :is(.spectrum-hero-card__surface, .spectrum-hero-card__content) {
+  opacity: var(--story-reveal, 0);
 }
 
 .story-card .glass-card-stage {
@@ -870,6 +890,18 @@ button {
     0 0 2rem rgba(132, 64, 255, 0.08);
 }
 
+.static-glass-card-stage,
+.static-glass-card {
+  position: relative;
+  width: 100%;
+}
+
+.static-glass-card__content {
+  position: relative;
+  z-index: 1;
+  pointer-events: auto;
+}
+
 .spectrum-hero-card__surface {
   position: absolute;
   z-index: 0;
@@ -878,15 +910,9 @@ button {
   overflow: hidden;
   border-radius: inherit;
   pointer-events: none;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.1) 0%,
-    rgba(8, 9, 18, 0.22) 32%,
-    rgba(6, 7, 16, 0.5) 70%,
-    rgba(3, 4, 11, 0.72) 100%
-  );
-  backdrop-filter: blur(clamp(52px, 4.2vw, 68px)) saturate(106%) brightness(0.92);
-  -webkit-backdrop-filter: blur(clamp(52px, 4.2vw, 68px)) saturate(106%) brightness(0.92);
+  background: var(--glass-tint);
+  backdrop-filter: var(--glass-backdrop);
+  -webkit-backdrop-filter: var(--glass-backdrop);
 }
 
 .spectrum-hero-card__surface::before {

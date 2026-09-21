@@ -45,15 +45,49 @@ const glassCardStylesPath = new URL(
   import.meta.url,
 );
 
-test("glass surfaces use the thicker shared backdrop blur", async () => {
+// These are source contracts, not a substitute for browser paint checks.
+test("glass implementations consume the same backdrop and tint tokens", async () => {
   const [stylesSource, glassCardStylesSource] = await Promise.all([
     readFile(globalStylesPath, "utf8"),
     readFile(glassCardStylesPath, "utf8"),
   ]);
-  const thickerBlur = /blur\(clamp\(52px,\s*4\.2vw,\s*68px\)\)/;
+  for (const source of [stylesSource, glassCardStylesSource]) {
+    assert.match(source, /backdrop-filter:\s*var\(--glass-backdrop\)/);
+    assert.match(source, /background:\s*var\(--glass-tint\)/);
+    assert.doesNotMatch(source, /blur\(clamp\(52px/);
+  }
+});
 
-  assert.match(stylesSource, thickerBlur);
-  assert.match(glassCardStylesSource, thickerBlur);
+test("navbar and footer render the same glass surface as headline cards", async () => {
+  const [glassCardSource, navbarSource, footerSource] = await Promise.all([
+    readFile(glassCardPath, "utf8"),
+    readFile(navbarPath, "utf8"),
+    readFile(footerPath, "utf8"),
+  ]);
+
+  assert.match(
+    glassCardSource,
+    /export function StaticGlassCard[\s\S]*?spectrum-hero-card__surface/,
+  );
+
+  for (const source of [navbarSource, footerSource]) {
+    assert.match(source, /<StaticGlassCard/);
+    assert.doesNotMatch(source, /<GlassTiltCard/);
+  }
+});
+
+test("story glass is not isolated by opacity or an extended outer 3D context", async () => {
+  const [styles, experience] = await Promise.all([
+    readFile(globalStylesPath, "utf8"),
+    readFile(experiencePath, "utf8"),
+  ]);
+  const motionRule = styles.match(/\.story-card__motion\s*\{[^}]*\}/)?.[0] ?? "";
+  assert.match(motionRule, /transform-style:\s*flat/);
+  const activeRule = styles.match(/\.story-card\[data-card-active="true"\] \.story-card__motion\s*\{[^}]*\}/)?.[0] ?? "";
+  assert.match(activeRule, /will-change:\s*transform;/);
+  assert.doesNotMatch(experience, /autoAlpha:/);
+  assert.match(experience, /"--story-reveal": "1"/);
+  assert.match(styles, /opacity:\s*var\(--story-reveal, 0\)/);
 });
 
 test("pack fades keep a stable Three.js render mode", async () => {
@@ -255,7 +289,7 @@ test("the floating glass navbar keeps desktop inline and compact devices collaps
     readFile(globalStylesPath, "utf8"),
   ]);
 
-  assert.match(navbarSource, /<GlassTiltCard/);
+  assert.match(navbarSource, /<StaticGlassCard/);
   assert.match(navbarSource, /src="\/assets\/Logo-navbar\.svg"/);
   assert.doesNotMatch(navbarSource, />\s*MS\s*</);
   assert.match(navbarSource, /href="\/#hero"/);
@@ -509,7 +543,7 @@ test("the final CTA and footer scroll as separate sections over the loop", async
     readFile(globalStylesPath, "utf8"),
   ]);
 
-  assert.match(footerSource, /<GlassTiltCard/);
+  assert.match(footerSource, /<StaticGlassCard/);
   assert.match(footerSource, /src="\/assets\/Logo\.svg"/);
   assert.match(footerSource, /href="\/#hero"/);
   assert.match(footerSource, /href="\/waitlist"/);
@@ -537,21 +571,26 @@ test("the final CTA and footer scroll as separate sections over the loop", async
   assert.match(experienceSource, /className="closing-track" data-closing-track/);
   assert.match(
     experienceSource,
-    /const storyEndPosition[\s\S]*scrollRoot\.scrollHeight[\s\S]*window\.innerHeight \* 2/,
-    "the authored story must finish where the two closing sections begin",
+    /const storyEndPosition[\s\S]*querySelector<HTMLElement>\('\[data-layer="closing"\]'\)[\s\S]*offsetTop/,
+    "the authored story must finish where the closing content actually begins",
   );
   assert.match(
     stylesSource,
-    /\.closing-overlay\s*\{[^}]*position:\s*absolute;[^}]*bottom:\s*0;[^}]*height:\s*200svh;/s,
+    /\.closing-overlay\s*\{[^}]*position:\s*relative;[^}]*margin-top:\s*calc\(var\(--experience-story-vh, 1500vh\) - 100svh\);/s,
     "the closing content must scroll naturally over the sticky media stage",
   );
   assert.match(
     stylesSource,
-    /\.closing-track\s*\{[^}]*position:\s*relative;[^}]*height:\s*200svh;/s,
+    /\.closing-track\s*\{[^}]*position:\s*relative;/s,
   );
   assert.match(
     stylesSource,
     /\.closing-section\s*\{[^}]*min-height:\s*100svh;/s,
+  );
+  assert.match(
+    stylesSource,
+    /\.closing-section--footer\s*\{[^}]*min-height:\s*0;[^}]*padding-top:\s*clamp\(/s,
+    "the footer must use its natural content height rather than another viewport",
   );
   assert.doesNotMatch(
     stylesSource,
@@ -568,10 +607,12 @@ test("the final CTA and footer scroll as separate sections over the loop", async
     ) ?? [];
   assert.equal(
     webglLayerTweens.length,
-    1,
-    "the closing sections should retain only the ambient loop, not the 3D packs",
+    2,
+    "the 3D packs should return behind the closing CTA after the cinematic",
   );
   assert.match(webglLayerTweens[0], /opacity:\s*0/);
+  assert.match(webglLayerTweens[1], /opacity:\s*1/);
+  assert.match(webglLayerTweens[1], /layerTransitions\.cinematicToAmbient\[0\]/);
 });
 
 test("the waitlist route reuses the landing system for an accessible XRPL lookup", async () => {

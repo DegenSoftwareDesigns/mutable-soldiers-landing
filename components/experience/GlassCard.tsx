@@ -78,6 +78,32 @@ export function LayeredGlassCard({
   );
 }
 
+type StaticGlassCardProps = {
+  className?: string;
+  cardClassName?: string;
+  children: React.ReactNode;
+};
+
+export function StaticGlassCard({
+  className,
+  cardClassName,
+  children,
+}: StaticGlassCardProps) {
+  return (
+    <div className={cn("static-glass-card-stage", className)}>
+      <div
+        className={cn(
+          "static-glass-card spectrum-hero-card",
+          cardClassName,
+        )}
+      >
+        <div aria-hidden="true" className="spectrum-hero-card__surface" />
+        <div className="static-glass-card__content">{children}</div>
+      </div>
+    </div>
+  );
+}
+
 type CTAButtonProps = Omit<
   React.ButtonHTMLAttributes<HTMLButtonElement>,
   "children"

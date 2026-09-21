@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { GlassTiltCard } from "@/assets/glass-tilt-card";
+import { StaticGlassCard } from "./GlassCard";
 
 const pendingPages = ["Artists", "Drops"] as const;
 const pendingCommunityLinks = ["Army X", "Telegram", "xrp.cafe"] as const;
@@ -26,12 +26,9 @@ function PendingFooterLink({ label }: { label: string }) {
 
 export function SiteFooter({ placement = "story" }: SiteFooterProps) {
   const footerCard = (
-    <GlassTiltCard
+    <StaticGlassCard
       className="site-footer-glass"
       cardClassName="site-footer-surface"
-      contentMode="intrinsic"
-      idleFloat={false}
-      interactive={false}
     >
       <div className="site-footer-inner">
             <Link className="site-footer-brand" href="/#hero" aria-label="Mutable Soldiers home">
@@ -65,7 +62,7 @@ export function SiteFooter({ placement = "story" }: SiteFooterProps) {
               ))}
             </nav>
       </div>
-    </GlassTiltCard>
+    </StaticGlassCard>
   );
 
   if (placement === "page") {
