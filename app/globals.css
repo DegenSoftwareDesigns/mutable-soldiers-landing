@@ -843,6 +843,34 @@ button {
   display: block;
 }
 
+/* Holographic headlines: foil gradient + sheen that follow the TiltCard light. */
+.spectrum-hero-card:not(.static-glass-card) :is(h1, h2),
+.spectrum-hero-card:not(.static-glass-card) :is(h1, h2) span {
+  --holo-x: var(--tilt-light-x, 50%);
+  --holo-y: var(--tilt-light-y, 50%);
+  color: transparent;
+  background:
+    radial-gradient(
+      circle at var(--holo-x) var(--holo-y),
+      rgba(255, 255, 255, 0.9),
+      transparent 45%
+    ),
+    linear-gradient(
+      115deg,
+      #e9e4ff 0%,
+      #9eeaff 18%,
+      #f3b8ff 34%,
+      #fff3c9 50%,
+      #a8ffd9 66%,
+      #b9a8ff 82%,
+      #e9e4ff 100%
+    );
+  background-size: 100% 100%, 300% 300%;
+  background-position: 0 0, var(--holo-x) var(--holo-y);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
 .glass-card h1 {
   font-size: clamp(3rem, 5.35vw, 6.4rem);
 }
