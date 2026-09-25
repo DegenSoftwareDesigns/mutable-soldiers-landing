@@ -1520,6 +1520,197 @@ button {
   margin-top: clamp(0.9rem, 1.5vw, 1.35rem);
 }
 
+/* Artist detail page: reuses the waitlist page shell and backdrop. */
+.artist-content {
+  display: grid;
+  gap: clamp(1.25rem, 2.5vw, 2rem);
+  width: min(calc(100vw - 4rem), 80rem);
+  margin-inline: auto;
+  padding: clamp(6.5rem, 12vh, 9rem) 0 clamp(3rem, 6vh, 5rem);
+}
+
+.artist-page a {
+  text-decoration: none;
+}
+
+.artist-page .glass-card-stage {
+  width: 100%;
+}
+
+.artist-page .glass-card__content {
+  padding: clamp(1.5rem, 3vw, 2.75rem);
+  transform: none;
+}
+
+.artist-page .glass-card h2 {
+  font-size: clamp(1.75rem, 2.6vw, 2.6rem);
+  line-height: 1;
+}
+
+.artist-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: inherit;
+  align-items: start;
+}
+
+.artist-hero__main {
+  display: grid;
+  gap: inherit;
+  min-width: 0;
+}
+
+.artist-eyebrow {
+  color: var(--cyan) !important;
+  font-family: var(--display-font) !important;
+  font-size: 0.8rem !important;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.artist-page .artist-intro h1 {
+  margin-top: 0.75rem;
+  font-size: clamp(2.75rem, 5.5vw, 5.5rem);
+}
+
+.artist-tagline {
+  color: var(--muted) !important;
+  font-size: clamp(1.1rem, 1.6vw, 1.4rem) !important;
+}
+
+.artist-soldier__frame {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 4 / 5;
+  margin-bottom: 1.25rem;
+  border: 1px solid var(--glass-border);
+  border-radius: 1.25rem;
+}
+
+.artist-soldier__frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.artist-soldier__badge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  padding: 0.55rem 1.1rem;
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  background: rgba(2, 3, 10, 0.55);
+  backdrop-filter: blur(8px);
+  font-family: var(--display-font);
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transform: translate(-50%, -50%);
+}
+
+.artist-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.9rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.artist-chips li {
+  padding: 0.3rem 0.8rem;
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 0.95rem;
+}
+
+.artist-quote {
+  margin: 1.25rem 0 0;
+  padding-left: 1rem;
+  border-left: 2px solid var(--violet);
+  color: var(--text);
+  font-size: clamp(1.15rem, 1.6vw, 1.45rem);
+  font-style: italic;
+}
+
+.artist-collections > h2 {
+  margin: 0 0 1rem;
+  font-family: var(--display-font);
+  font-size: clamp(1.5rem, 2.2vw, 2.2rem);
+  font-weight: 500;
+}
+
+.artist-collections__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: 1rem;
+}
+
+.artist-collection .glass-card__content {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.artist-collection strong {
+  font-family: var(--display-font);
+  font-size: 1.2rem;
+  font-weight: 500;
+}
+
+.artist-collection span {
+  color: var(--cyan);
+}
+
+.artist-pager {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem;
+}
+
+@media (max-width: 56rem) {
+  .artist-content {
+    width: calc(100vw - 2rem);
+  }
+
+  .artist-hero {
+    grid-template-columns: 1fr;
+  }
+
+  /* Mobile order: intro, soldier, about. */
+  .artist-hero__main {
+    display: contents;
+  }
+
+  .artist-hero > .spectrum-layered-card-stage {
+    order: 1;
+  }
+
+  .artist-about {
+    order: 2;
+  }
+
+  .artist-pager {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .artist-pager .cta-button {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .artist-pager .cta-button--primary {
+    grid-column: 1 / -1;
+    order: -1;
+  }
+}
+
 .waitlist-form__label {
   display: block;
   margin-bottom: 1rem;
