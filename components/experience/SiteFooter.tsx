@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { StaticGlassCard } from "./GlassCard";
 
-const pendingPages = ["Artists", "Drops"] as const;
+const pendingPages = ["Drops"] as const;
 const pendingCommunityLinks = ["Army X", "Telegram", "xrp.cafe"] as const;
 
 type SiteFooterProps = {
@@ -49,6 +49,9 @@ export function SiteFooter({ placement = "story" }: SiteFooterProps) {
               </Link>
               <Link className="site-footer-link" href="/waitlist">
                 Waitlist
+              </Link>
+              <Link className="site-footer-link" href="/artists">
+                Artists
               </Link>
               {pendingPages.map((page) => (
                 <PendingFooterLink label={page} key={page} />
