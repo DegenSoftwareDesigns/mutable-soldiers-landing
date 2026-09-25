@@ -1674,17 +1674,32 @@ button {
 }
 
 /* Artists index: 3D ring carousel. Cards sit on a cylinder whose radius fits --count cards. */
-.artist-index-intro {
+/* Same StaticGlassCard material as the navbar and footer, so the blur matches. */
+.artist-index-intro .static-glass-card__content {
+  padding: clamp(1.5rem, 3vw, 2.75rem);
   text-align: center;
 }
 
-.artist-page .artist-index-intro h1 {
+.artist-index-intro h1 {
+  margin: 0;
+  font-family: var(--display-font);
   font-size: clamp(2.5rem, 5vw, 4.5rem);
+  font-weight: 500;
+  line-height: 0.88;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
 }
 
 .artist-index-intro p {
   max-width: 44ch;
-  margin: 0.9rem auto 0 !important;
+  margin: 0.9rem auto 0;
+  color: rgba(247, 246, 255, 0.92);
+  font-family: var(--body-font);
+  font-size: clamp(1rem, 1.08vw, 1.12rem);
+  font-weight: 600;
+  line-height: 1.55;
+  letter-spacing: 0.012em;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.58);
 }
 
 .artist-carousel {
@@ -1736,6 +1751,10 @@ button {
   -webkit-user-drag: none;
 }
 
+.artist-carousel__glass .site-navbar-surface {
+  --glass-radius: 0.75rem;
+}
+
 .artist-carousel__glass,
 .artist-carousel__glass .static-glass-card,
 .artist-carousel__glass .static-glass-card__content {
@@ -1746,7 +1765,7 @@ button {
   display: grid;
   grid-template-rows: 1fr auto auto;
   gap: 0.35rem;
-  padding: 0.75rem 0.75rem 1rem;
+  padding: 1rem 1rem 1.25rem;
 }
 
 .artist-carousel__glass img {
@@ -1755,7 +1774,7 @@ button {
   min-height: 0;
   margin-bottom: 0.4rem;
   object-fit: cover;
-  border-radius: 0.8rem;
+  border-radius: 0.4rem;
 }
 
 .artist-carousel__glass strong {

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ArtistCarousel } from "@/components/artists/ArtistCarousel";
-import { GlassCard } from "@/components/experience/GlassCard";
+import { StaticGlassCard } from "@/components/experience/GlassCard";
 import { SiteFooter } from "@/components/experience/SiteFooter";
 import { SiteNavbar } from "@/components/experience/SiteNavbar";
 import { artists } from "@/lib/artists";
@@ -31,13 +31,16 @@ export default function ArtistsPage() {
       <SiteNavbar />
 
       <div className="artist-content">
-        <GlassCard className="artist-card artist-index-intro" flat>
-          <h1>16 Artists</h1>
+        <StaticGlassCard
+          className="site-navbar-glass artist-index-intro"
+          cardClassName="site-navbar-surface"
+        >
+          <h1>Featured Artists</h1>
           <p>
             Special 1/1 soldiers crafted by some of the greatest artists in this
-            space. Drag, swipe or use the arrows to meet them.
+            space. Get to know them if you haven&apos;t already.
           </p>
-        </GlassCard>
+        </StaticGlassCard>
 
         <ArtistCarousel
           artists={artists.map((artist) => ({
