@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import type { ExperienceDevice } from "@/lib/experience/profile";
 import { CTAButton, StaticGlassCard } from "./GlassCard";
 
-const pendingPages = ["Artists", "Drops"] as const;
+const pendingPages = ["Drops"] as const;
 
 type SiteNavbarProps = {
   device?: ExperienceDevice;
@@ -17,6 +17,7 @@ export function SiteNavbar({ device }: SiteNavbarProps = {}) {
   const pathname = usePathname();
   const homeIsActive = pathname === "/";
   const waitlistIsActive = pathname === "/waitlist";
+  const artistsIsActive = pathname.startsWith("/artists");
   const [menuOpen, setMenuOpen] = useState(false);
   const shellRef = useRef<HTMLElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
@@ -91,6 +92,13 @@ export function SiteNavbar({ device }: SiteNavbarProps = {}) {
             >
               Waitlist
             </Link>
+            <Link
+              className={`site-navbar-link ${artistsIsActive ? "is-active" : ""}`}
+              href="/artists"
+              aria-current={artistsIsActive ? "page" : undefined}
+            >
+              Artists
+            </Link>
             {pendingPages.map((page) => (
               <button
                 className="site-navbar-link"
@@ -159,6 +167,16 @@ export function SiteNavbar({ device }: SiteNavbarProps = {}) {
                 <span>Waitlist</span>
                 <span aria-hidden="true">02</span>
               </Link>
+              <Link
+                className={`site-navbar-link ${artistsIsActive ? "is-active" : ""}`}
+                href="/artists"
+                aria-current={artistsIsActive ? "page" : undefined}
+                tabIndex={menuOpen ? undefined : -1}
+                onClick={() => setMenuOpen(false)}
+              >
+                <span>Artists</span>
+                <span aria-hidden="true">03</span>
+              </Link>
               {pendingPages.map((page, index) => (
                 <button
                   className="site-navbar-link"
@@ -169,7 +187,7 @@ export function SiteNavbar({ device }: SiteNavbarProps = {}) {
                   key={page}
                 >
                   <span>{page}</span>
-                  <span aria-hidden="true">0{index + 3}</span>
+                  <span aria-hidden="true">0{index + 4}</span>
                 </button>
               ))}
             </nav>
