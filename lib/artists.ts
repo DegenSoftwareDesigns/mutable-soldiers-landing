@@ -53,21 +53,25 @@ export const artists: Artist[] = [
       { name: "[Collection B]", url: "https://xrp.cafe" },
     ],
   },
-  {
-    slug: "artist-two",
-    name: "[Artist Two]",
-    tagline: "[Short line: discipline · location]",
-    xHandle: "artisttwo",
-    bio: ["[Artist bio. Written by the artist.]"],
-    soldier: {
-      name: "[Soldier name]",
-      className: "[Class]",
-      lore: "[One line of lore about this soldier.]",
-      blurredImage: placeholderSoldierImage,
-      revealed: false,
-    },
-    collections: [],
-  },
+  // Placeholders so the index shows the full roster of 16 until real data lands.
+  ...Array.from({ length: 15 }, (_, index): Artist => {
+    const number = String(index + 2).padStart(2, "0");
+    return {
+      slug: `artist-${number}`,
+      name: `[Artist ${number}]`,
+      tagline: "[Short line: discipline · location]",
+      xHandle: `artist${number}`,
+      bio: ["[Artist bio. Written by the artist.]"],
+      soldier: {
+        name: "[Soldier name]",
+        className: "[Class]",
+        lore: "[One line of lore about this soldier.]",
+        blurredImage: placeholderSoldierImage,
+        revealed: false,
+      },
+      collections: [],
+    };
+  }),
 ];
 
 export function getArtist(slug: string) {
