@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
+import Link from "next/link";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
@@ -347,6 +348,13 @@ function StoryCards({
               in this space. Each of them representing their own essence through an
               ARMY soldier.
             </p>
+          </TiltCardItem>
+          <TiltCardItem depth={96}>
+            <div className="cta-row cta-row--center">
+              <Link className="cta-button cta-button--primary" href="/artists">
+                <span>Meet the Artists</span>
+              </Link>
+            </div>
           </TiltCardItem>
         </LayeredGlassCard>
       </StoryCardShell>

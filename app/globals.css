@@ -2608,3 +2608,8 @@ button {
     transform: none !important;
   }
 }
+
+.story-card[data-card="artists"] .cta-button {
+  justify-content: center;
+  text-align: center;
+}
