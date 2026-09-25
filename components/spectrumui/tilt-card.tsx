@@ -128,6 +128,9 @@ export function TiltCard({
   const glarePosX = useTransform(tiltX, (value) => value * 100)
   const glarePosY = useTransform(tiltY, (value) => value * 100)
   const glareBackground = useMotionTemplate`radial-gradient(circle at ${glarePosX}% ${glarePosY}%, ${glareColor}, transparent 65%)`
+  // Exposed so descendants (e.g. holographic headlines) can react to the light
+  const lightX = useMotionTemplate`${glarePosX}%`
+  const lightY = useMotionTemplate`${glarePosY}%`
 
   const setInteractiveHover = useCallback((next: HTMLElement | null) => {
     if (activeInteractive.current === next) return
@@ -262,7 +265,9 @@ export function TiltCard({
           rotateY: shouldReduceMotion ? restRotateY : rotateY,
           scale: cardScale,
           transformStyle: "preserve-3d",
-        }}
+          "--tilt-light-x": lightX,
+          "--tilt-light-y": lightY,
+        } as React.ComponentProps<typeof motion.div>["style"]}
         className={cn(
           "relative will-change-transform pointer-events-none [&_button]:pointer-events-auto [&_a]:pointer-events-auto [&_[role=button]]:pointer-events-auto",
           !unstyled &&

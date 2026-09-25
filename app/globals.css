@@ -843,6 +843,82 @@ button {
   display: block;
 }
 
+/* Holographic headlines: foil gradient + sheen that follow the TiltCard light. */
+/* Only the innermost text element gets the foil: a clipped ancestor would draw a second,
+   un-lifted copy behind the spans that TiltCardItem moves in 3D. */
+.spectrum-hero-card:not(.static-glass-card) :is(h1, h2):not(:has(span)),
+.spectrum-hero-card:not(.static-glass-card) :is(h1, h2) span:not(:has(span)),
+.waitlist-check-card h1 {
+  --holo-x: var(--tilt-light-x, 50%);
+  --holo-y: var(--tilt-light-y, 50%);
+  color: transparent;
+  background:
+    var(--holo-sheen, linear-gradient(transparent, transparent)),
+    radial-gradient(
+      circle at var(--holo-x) var(--holo-y),
+      rgba(255, 255, 255, 0.9),
+      transparent 45%
+    ),
+    linear-gradient(
+      115deg,
+      #e9e4ff 0%,
+      #9eeaff 18%,
+      #f3b8ff 34%,
+      #fff3c9 50%,
+      #a8ffd9 66%,
+      #b9a8ff 82%,
+      #e9e4ff 100%
+    );
+  background-size: 250% 100%, 100% 100%, 300% 300%;
+  background-position: 150% 0, 0 0, var(--holo-x) var(--holo-y);
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* Headlines with no pointer tilt get an idle sheen sweeping left to right. */
+.waitlist-check-card h1 {
+  --holo-sheen: linear-gradient(
+    105deg,
+    transparent 42%,
+    rgba(255, 255, 255, 0.7) 50%,
+    transparent 58%
+  );
+  animation: holo-sheen 7s ease-in-out infinite;
+}
+
+@media (hover: none), (pointer: coarse) {
+  .spectrum-hero-card:not(.static-glass-card) :is(h1, h2):not(:has(span)),
+  .spectrum-hero-card:not(.static-glass-card) :is(h1, h2) span:not(:has(span)) {
+    --holo-sheen: linear-gradient(
+      105deg,
+      transparent 42%,
+      rgba(255, 255, 255, 0.7) 50%,
+      transparent 58%
+    );
+    animation: holo-sheen 7s ease-in-out infinite;
+  }
+}
+
+@keyframes holo-sheen {
+  0%,
+  45% {
+    background-position: 150% 0, 0 0, var(--holo-x) var(--holo-y);
+  }
+
+  100% {
+    background-position: -50% 0, 0 0, var(--holo-x) var(--holo-y);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .waitlist-check-card h1,
+  .spectrum-hero-card:not(.static-glass-card) :is(h1, h2):not(:has(span)),
+  .spectrum-hero-card:not(.static-glass-card) :is(h1, h2) span:not(:has(span)) {
+    animation: none;
+  }
+}
+
 .glass-card h1 {
   font-size: clamp(3rem, 5.35vw, 6.4rem);
 }
