@@ -188,6 +188,69 @@ test("hero packs drag independently and convert pointer speed into glow", async 
   assert.match(configSource, /reducedMotionTiltScale:\s*0\.2/);
 });
 
+test("sustained hard shaking overloads a hero pack into a glitch", async () => {
+  const [source, configSource] = await Promise.all([
+    readFile(packScenePath, "utf8"),
+    readFile(configPath, "utf8"),
+  ]);
+
+  assert.match(configSource, /glitch:\s*\{/);
+  assert.match(
+    source,
+    /state\.energy >= tuning\.energyThreshold/,
+    "only high-energy shaking may charge the glitch",
+  );
+  assert.match(source, /applyPackGlitch\(\s*packA,\s*dragA/);
+  assert.match(source, /applyPackGlitch\(\s*packB,\s*dragB/);
+  assert.match(
+    source,
+    /if \(reduceMotion\) return strength;/,
+    "reduced motion must skip the glitch jumps",
+  );
+  assert.match(
+    source,
+    /strength <= 0 \|\| reducedMotionQuery\.matches/,
+    "reduced motion must skip the screen-space shake and RGB split",
+  );
+});
+
+test("keeping a glitched pack shaken mutates the whole viewport", async () => {
+  const [source, configSource] = await Promise.all([
+    readFile(packScenePath, "utf8"),
+    readFile(configPath, "utf8"),
+  ]);
+
+  assert.match(configSource, /viewportDelaySeconds:\s*2/);
+  assert.match(
+    source,
+    /state\.glitch\.shakeTime >= packMotion\.glitch\.viewportDelaySeconds/,
+    "the viewport stage needs 2s of shaking after the glitch starts",
+  );
+  assert.match(
+    source,
+    /!reducedMotionQuery\.matches &&/,
+    "reduced motion must skip the viewport mutation",
+  );
+  assert.match(source, /viewportMutation\?\.dispose\(\)/);
+});
+
+test("the mutated viewport reveals the halloween apparition after 2s", async () => {
+  const [mutationSource, configSource, styles] = await Promise.all([
+    readFile(new URL("../components/experience/viewportMutation.ts", import.meta.url), "utf8"),
+    readFile(configPath, "utf8"),
+    readFile(globalStylesPath, "utf8"),
+  ]);
+
+  assert.match(configSource, /terrorDelaySeconds:\s*2/);
+  assert.match(configSource, /terrorSrc:\s*"\/assets\/halloween-easter-egg\.png"/);
+  assert.match(mutationSource, /age >= tuning\.terrorDelaySeconds/);
+  assert.match(
+    styles,
+    /\.viewport-mutation__terror\s*\{[^}]*mix-blend-mode:\s*screen/,
+    "the apparition must blend over the page",
+  );
+});
+
 test("GSAP's smoothed playhead is the single progress clock", async () => {
   const source = await readFile(experiencePath, "utf8");
 
