@@ -1,7 +1,8 @@
 import { packMotion } from "@/lib/experience/config";
 
 // Viewport-wide stage of the pack glitch easter egg: a VHS-style tear and RGB
-// split over the whole stage (SVG filter) plus a CRT signal-loss overlay.
+// split (SVG filter) over the sticky stage and the scrolling closing section,
+// plus a fixed CRT signal-loss overlay above everything.
 export type ViewportMutation = {
   update: (strength: number, age: number, elapsed: number) => void;
   release: () => void;
@@ -24,6 +25,14 @@ function svgElement(
 }
 
 export function createViewportMutation(stage: HTMLElement): ViewportMutation {
+  // The closing section scrolls outside the sticky stage, so it is filtered too.
+  const findTargets = () => {
+    const closing = stage.parentElement?.querySelector<HTMLElement>(
+      ".closing-overlay",
+    );
+    return closing ? [stage, closing] : [stage];
+  };
+  let filteredTargets: HTMLElement[] = [];
   const tuning = packMotion.glitch;
   const filterId = `ms-mutation-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -125,7 +134,7 @@ export function createViewportMutation(stage: HTMLElement): ViewportMutation {
   terror.src = tuning.terrorSrc;
   const opacityLevels = tuning.terrorOpacityLevels;
 
-  stage.append(svg, overlay);
+  document.body.append(svg, overlay);
 
   let active = false;
   let lastStep = -Infinity;
@@ -133,7 +142,8 @@ export function createViewportMutation(stage: HTMLElement): ViewportMutation {
   const clear = () => {
     if (!active) return;
     active = false;
-    stage.style.filter = "";
+    for (const target of filteredTargets) target.style.filter = "";
+    filteredTargets = [];
     overlay.classList.remove("is-active");
     overlay.style.removeProperty("--mutation");
     label.textContent = "";
@@ -171,10 +181,12 @@ export function createViewportMutation(stage: HTMLElement): ViewportMutation {
       redOffset.setAttribute("dx", split.toFixed(1));
       cyanOffset.setAttribute("dx", (-split).toFixed(1));
       const hue = (elapsed * tuning.viewportHueDegreesPerSecond) % 360;
-      stage.style.filter =
+      const filterValue =
         `url(#${filterId}) hue-rotate(${(hue * strength).toFixed(0)}deg) ` +
         `saturate(${(1 + 0.6 * strength).toFixed(2)}) ` +
         `contrast(${(1 + 0.18 * strength).toFixed(2)})`;
+      filteredTargets = findTargets();
+      for (const target of filteredTargets) target.style.filter = filterValue;
       noise.style.backgroundPosition =
         `${Math.floor(Math.random() * 200)}px ${Math.floor(Math.random() * 200)}px`;
 

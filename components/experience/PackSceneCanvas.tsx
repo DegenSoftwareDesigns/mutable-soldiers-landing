@@ -372,6 +372,7 @@ function applyPackDrag(
   delta: number,
   heroActive: boolean,
   reduceMotion: boolean,
+  lockPlacement: boolean,
 ) {
   if (!heroActive) {
     state.dragging = false;
@@ -417,8 +418,11 @@ function applyPackDrag(
   state.targetTilt.multiplyScalar(gestureMemory);
   state.targetEnergy *= gestureMemory;
 
-  pack.transform.position.x += state.offset.x;
-  pack.transform.position.y += state.offset.y;
+  // The final-section packs keep their own placement; only tilt and glow react.
+  if (!lockPlacement) {
+    pack.transform.position.x += state.offset.x;
+    pack.transform.position.y += state.offset.y;
+  }
   const tiltScale = reduceMotion
     ? packMotion.interaction.reducedMotionTiltScale
     : 1;
@@ -441,6 +445,7 @@ function applyPackGlitch(
   elapsed: number,
   heroActive: boolean,
   reduceMotion: boolean,
+  lockPlacement: boolean,
 ) {
   const glitch = state.glitch;
   const tuning = packMotion.glitch;
@@ -491,7 +496,7 @@ function applyPackGlitch(
   if (!glitch.active) {
     // Build-up hint: the pack starts to stutter as the charge nears overload.
     const buildUp = Math.max(0, (glitch.charge - 0.35) / 0.65);
-    if (buildUp > 0 && !reduceMotion) {
+    if (buildUp > 0 && !reduceMotion && !lockPlacement) {
       const jitter = tuning.previewJitter * buildUp * buildUp;
       pack.transform.position.x += (Math.random() - 0.5) * jitter;
       pack.transform.position.y += (Math.random() - 0.5) * jitter;
@@ -540,9 +545,11 @@ function applyPackGlitch(
       glitch.jumpScale = 0;
     }
   }
-  pack.transform.position.addScaledVector(glitch.jumpOffset, strength);
+  if (!lockPlacement) {
+    pack.transform.position.addScaledVector(glitch.jumpOffset, strength);
+    pack.transform.scale.multiplyScalar(1 + glitch.jumpScale * strength);
+  }
   pack.transform.rotation.z += glitch.jumpRotation * strength;
-  pack.transform.scale.multiplyScalar(1 + glitch.jumpScale * strength);
 
   return strength;
 }
@@ -832,8 +839,10 @@ export function PackSceneCanvas({
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
 
-    const heroIsActive = () =>
-      progressSignal.get() <= packMotion.ranges.reposition[0];
+    // Packs can be shaken in the hero and once they return in the final section.
+    const packsInteractive = (progress = progressSignal.get()) =>
+      progress <= packMotion.ranges.reposition[0] ||
+      progress >= packMotion.ranges.finalReveal[0];
 
     const setPointerFromEvent = (event: PointerEvent) => {
       const bounds = renderer.domElement.getBoundingClientRect();
@@ -860,7 +869,7 @@ export function PackSceneCanvas({
         !interactionEnabled ||
         !packA ||
         !packB ||
-        !heroIsActive() ||
+        !packsInteractive() ||
         !setPointerFromEvent(event)
       ) {
         return null;
@@ -893,7 +902,10 @@ export function PackSceneCanvas({
       if (
         activeDrag ||
         event.button !== 0 ||
-        (event.pointerType !== "mouse" && event.pointerType !== "pen")
+        (event.pointerType !== "mouse" && event.pointerType !== "pen") ||
+        (event.target as Element | null)?.closest?.(
+          "a, button, input, textarea, select",
+        )
       ) {
         return;
       }
@@ -930,7 +942,7 @@ export function PackSceneCanvas({
       }
       if (event.pointerId !== activeDrag.pointerId) return;
       event.preventDefault();
-      if (!heroIsActive()) {
+      if (!packsInteractive()) {
         finishDrag();
         return;
       }
@@ -1150,13 +1162,15 @@ export function PackSceneCanvas({
           reducedMotionQuery.matches,
           layoutTuning,
         );
-        const heroActive = heroIsActive();
+        const heroActive = packsInteractive(progress);
+        const lockPlacement = progress >= packMotion.ranges.finalReveal[0];
         applyPackDrag(
           packA,
           dragA,
           delta,
           heroActive,
           reducedMotionQuery.matches,
+          lockPlacement,
         );
         applyPackDrag(
           packB,
@@ -1164,6 +1178,7 @@ export function PackSceneCanvas({
           delta,
           heroActive,
           reducedMotionQuery.matches,
+          lockPlacement,
         );
         const glitchStrength = Math.max(
           applyPackGlitch(
@@ -1173,6 +1188,7 @@ export function PackSceneCanvas({
             elapsed,
             heroActive,
             reducedMotionQuery.matches,
+            lockPlacement,
           ),
           applyPackGlitch(
             packB,
@@ -1181,6 +1197,7 @@ export function PackSceneCanvas({
             elapsed,
             heroActive,
             reducedMotionQuery.matches,
+            lockPlacement,
           ),
         );
         applyCanvasGlitch(glitchStrength, elapsed);
@@ -1238,7 +1255,7 @@ export function PackSceneCanvas({
     };
 
     const syncRenderActivity = (progress: number) => {
-      if (progress > packMotion.ranges.reposition[0]) finishDrag();
+      if (!packsInteractive(progress)) finishDrag();
       const nextRenderActive = isRenderActive(progress);
       if (nextRenderActive === renderActive) return;
       renderActive = nextRenderActive;
