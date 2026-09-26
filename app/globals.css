@@ -1500,18 +1500,90 @@ button {
 
 .waitlist-check-card {
   --glass-radius: clamp(1.75rem, 2.6vw, 3rem);
-  width: min(calc(100vw - 4rem), var(--experience-shell-max));
+  perspective: none;
+  width: min(100%, var(--experience-shell-max));
   margin-inline: auto;
-  animation: waitlist-card-enter 360ms cubic-bezier(0.2, 0, 0, 1) both;
+  animation: waitlist-card-enter 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-.waitlist-check-card .glass-card__content {
+/* Same look as .site-navbar-surface, minus !important so the entrance can
+   animate the rim. */
+.waitlist-glass-surface {
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow:
+    inset 1.5px 1.5px 0 rgba(255, 255, 255, 0.32),
+    inset -1.5px -1.5px 1px rgba(0, 0, 0, 0.35),
+    inset 0 0 24px rgba(255, 255, 255, 0.04),
+    0 12px 30px rgba(0, 0, 0, 0.32),
+    0 0 1.75rem rgba(132, 64, 255, 0.06);
+  animation: waitlist-rim-in 900ms 120ms cubic-bezier(0.2, 0, 0, 1) backwards;
+}
+
+.waitlist-check-card .spectrum-hero-card__surface {
+  animation: waitlist-glass-form 850ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+.waitlist-check-card .static-glass-card__content {
   padding: clamp(2rem, 4vw, 4rem);
-  transform: none;
+}
+
+/* One pass of light across the glass once it has formed. */
+.waitlist-glint {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  overflow: hidden;
+  border-radius: var(--glass-radius);
+  pointer-events: none;
+}
+
+.waitlist-glint::before {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.14) 46%,
+    rgba(196, 176, 255, 0.1) 52%,
+    transparent 68%
+  );
+  transform: translateX(-100%);
+  animation: waitlist-glint 1100ms 300ms cubic-bezier(0.45, 0, 0.2, 1) both;
+}
+
+/* Content writes itself in, left to right, one row after another. */
+.waitlist-check-card h1,
+.waitlist-form > *,
+.waitlist-compact > * {
+  animation: waitlist-wipe 1300ms cubic-bezier(0.3, 0.1, 0.2, 1) backwards;
+}
+
+.waitlist-check-card h1,
+.waitlist-compact > :first-child {
+  animation-delay: 700ms;
+}
+
+.waitlist-form > :nth-child(1),
+.waitlist-compact > :nth-child(2) {
+  animation-delay: 950ms;
+}
+
+.waitlist-form > :nth-child(2) {
+  animation-delay: 1150ms;
+}
+
+.waitlist-form > :nth-child(3) {
+  animation-delay: 1350ms;
 }
 
 .waitlist-check-card h1 {
   max-width: 12ch;
+  margin: 0;
+  font-family: var(--display-font);
+  font-weight: 500;
+  line-height: 0.88;
+  letter-spacing: -0.045em;
   font-size: clamp(3rem, 6.5vw, 7.25rem);
   text-wrap: balance;
 }
@@ -1620,8 +1692,135 @@ button {
   color: #ff9cbd !important;
 }
 
-.waitlist-feedback[data-tone="ready"] {
-  color: #70f5e9 !important;
+.waitlist-lookup--result {
+  display: grid;
+  justify-items: center;
+  gap: clamp(1rem, 2vw, 1.5rem);
+}
+
+.waitlist-check-card.waitlist-check-card--compact {
+  width: min(100%, 34rem);
+}
+
+.waitlist-check-card--compact .static-glass-card__content {
+  padding: 0.85rem 0.85rem 0.85rem 1.5rem;
+}
+
+.waitlist-compact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.waitlist-check-card .waitlist-compact__title {
+  max-width: none;
+  margin: 0;
+  color: var(--muted);
+  font-family: var(--body-font);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.waitlist-compact__address {
+  margin: 0.2rem 0 0 !important;
+  color: var(--text) !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 1.05rem !important;
+  letter-spacing: 0.02em;
+}
+
+.pack-reveal {
+  position: relative;
+  width: min(100%, 38rem);
+  height: clamp(28rem, 70svh, 48rem);
+}
+
+.pack-reveal canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.pack-reveal__static {
+  display: block;
+  height: 86%;
+  max-width: 100%;
+  margin: 7% auto 0;
+  object-fit: contain;
+  filter: drop-shadow(0 1.5rem 2.5rem rgba(0, 0, 0, 0.55));
+}
+
+.waitlist-outcome {
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+  animation: waitlist-fade-in 360ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+.waitlist-outcome--actions {
+  grid-auto-flow: column;
+  gap: 0.75rem;
+}
+
+.waitlist-outcome__title {
+  margin: 0;
+  color: var(--text);
+  font-family: var(--display-font);
+  font-size: clamp(1.1rem, 2vw, 1.45rem);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+.waitlist-ways {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.waitlist-way {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  border-radius: 999px;
+  color: var(--text);
+  background: rgba(3, 4, 11, 0.56);
+  font-family: var(--body-font);
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: border-color 130ms ease-out, background-color 130ms ease-out;
+}
+
+.waitlist-way:hover {
+  border-color: rgba(36, 235, 224, 0.72);
+  background: rgba(3, 4, 11, 0.72);
+}
+
+.waitlist-way:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
 .site-footer--page {
@@ -1635,10 +1834,65 @@ button {
   transform: none;
 }
 
+/* Only the glass surface itself fades/unblurs. An animated opacity on the
+   card or any ancestor makes it a backdrop root and kills the blur. */
 @keyframes waitlist-card-enter {
   from {
+    transform: translateY(14px) scale(0.965);
+  }
+}
+
+@keyframes waitlist-glass-form {
+  from {
     opacity: 0;
-    transform: translateY(18px);
+    backdrop-filter: blur(0px) saturate(100%);
+    -webkit-backdrop-filter: blur(0px) saturate(100%);
+  }
+
+  to {
+    opacity: 1;
+    backdrop-filter: var(--glass-backdrop);
+    -webkit-backdrop-filter: var(--glass-backdrop);
+  }
+}
+
+@keyframes waitlist-rim-in {
+  from {
+    border-color: transparent;
+    box-shadow: none;
+  }
+}
+
+@keyframes waitlist-glint {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* The mask only exists while animating, so focus rings and glows are never
+   clipped afterwards. */
+@keyframes waitlist-wipe {
+  from {
+    transform: translateX(-16px);
+    mask-image: linear-gradient(90deg, #000 35%, transparent 65%);
+    mask-size: 300% 100%;
+    mask-repeat: no-repeat;
+    mask-position: 100% 0;
+  }
+
+  to {
+    transform: none;
+    mask-image: linear-gradient(90deg, #000 35%, transparent 65%);
+    mask-size: 300% 100%;
+    mask-repeat: no-repeat;
+    mask-position: 0 0;
+  }
+}
+
+@keyframes waitlist-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
   }
 
   to {
@@ -1760,12 +2014,41 @@ button {
     padding: 5rem 1rem;
   }
 
-  .waitlist-check-card .glass-card__content {
+  .waitlist-check-card .static-glass-card__content {
     padding: 1.5rem;
   }
 
-  .waitlist-check-card {
-    width: calc(100vw - 2rem);
+  .waitlist-check-card--compact .static-glass-card__content {
+    padding: 0.75rem 0.75rem 0.75rem 1.1rem;
+  }
+
+  .waitlist-form__controls {
+    grid-template-columns: 1fr;
+  }
+
+  .waitlist-submit {
+    width: 100%;
+  }
+
+  .pack-reveal {
+    height: clamp(24rem, 62svh, 34rem);
+  }
+
+  .waitlist-outcome,
+  .waitlist-ways {
+    width: 100%;
+  }
+
+  .waitlist-outcome--actions {
+    grid-auto-flow: row;
+  }
+
+  .waitlist-ways {
+    flex-direction: column;
+  }
+
+  .waitlist-way {
+    width: 100%;
   }
 
   .waitlist-check-card h1 {
@@ -2279,6 +2562,11 @@ button {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+  }
+
+  .waitlist-check-card,
+  .waitlist-check-card * {
+    animation-delay: 0s !important;
   }
 
   .glass-card {

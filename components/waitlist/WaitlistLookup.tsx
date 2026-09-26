@@ -1,51 +1,170 @@
 "use client";
 
-import { FormEvent, useState } from "react";
-import { GlassCard } from "@/components/experience/GlassCard";
+import { FormEvent, useEffect, useRef, useState } from "react";
+import { StaticGlassCard } from "@/components/experience/GlassCard";
+import {
+  cardMessage,
+  PackReveal,
+  preloadPack,
+} from "@/components/waitlist/PackReveal";
+import { lookupSpots, shareImage } from "@/lib/waitlist/spots";
 
 const xrplClassicAddress = /^r[1-9A-HJ-NP-Za-km-z]{24,34}$/;
 
-type LookupFeedback = {
-  tone: "idle" | "error" | "ready";
-  message: string;
-};
+// TODO: replace the placeholder hrefs with the real community links.
+const waysToGetASpot = [
+  { label: "Follow Army X", href: "#" },
+  { label: "Join the Telegram", href: "#" },
+  { label: "Watch xrp.cafe", href: "#" },
+];
 
-const idleFeedback: LookupFeedback = {
-  tone: "idle",
-  message: "Submitting your wallet address will not connect it.",
-};
+type Status = "idle" | "loading" | "error" | "result";
+
+// Same material as the navbar and footer.
+function WaitlistCard({
+  className = "",
+  children,
+}: {
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <StaticGlassCard
+      className={`site-navbar-glass waitlist-check-card ${className}`}
+      cardClassName="waitlist-glass-surface"
+    >
+      <span className="waitlist-glint" aria-hidden="true" />
+      {children}
+    </StaticGlassCard>
+  );
+}
+
+function shortAddress(address: string) {
+  return `${address.slice(0, 6)}…${address.slice(-4)}`;
+}
+
+// X can't attach images through an intent: the card comes from the link's
+// Open Graph image, so the link must point at a public URL.
+function shareUrl(spots: number) {
+  const link = `${window.location.origin}/waitlist?spots=${spots}`;
+  const text = `⚔️I've got ${spots} ${spots === 1 ? "spot" : "spots"} for the new $ARMY Mutable Soldiers NFT Collection ⚔️
+
+What about you? 👉${link}`;
+  return `https://x.com/intent/post?text=${encodeURIComponent(text)}`;
+}
 
 export function WaitlistLookup() {
   const [address, setAddress] = useState("");
-  const [feedback, setFeedback] = useState<LookupFeedback>(idleFeedback);
+  const [status, setStatus] = useState<Status>("idle");
+  const [invalid, setInvalid] = useState(false);
+  const [spots, setSpots] = useState(0);
+  const [revealed, setRevealed] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  useEffect(() => {
+    void preloadPack().catch(() => {});
+  }, []);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const normalizedAddress = address.trim();
 
     if (!xrplClassicAddress.test(normalizedAddress)) {
-      setFeedback({
-        tone: "error",
-        message: "Enter a valid classic XRPL wallet address.",
-      });
+      setInvalid(true);
       return;
     }
 
     setAddress(normalizedAddress);
-    setFeedback({
-      tone: "ready",
-      message: "Address accepted. Spot lookup will be connected next.",
-    });
+    setStatus("loading");
+    try {
+      setSpots(await lookupSpots(normalizedAddress));
+      setRevealed(false);
+      setStatus("result");
+    } catch {
+      setStatus("error");
+    }
   };
 
-  const handleAddressChange = (nextAddress: string) => {
-    setAddress(nextAddress);
-    if (feedback.tone !== "idle") setFeedback(idleFeedback);
+  const checkAnother = () => {
+    setAddress("");
+    setStatus("idle");
+    requestAnimationFrame(() => inputRef.current?.focus());
   };
+
+  const feedback = invalid
+    ? "Enter a valid classic XRPL wallet address."
+    : status === "error"
+      ? "We couldn't reach the spots list. Try again in a moment."
+      : "Submitting your wallet address will not connect it.";
+
+  if (status === "result") {
+    return (
+      <section className="waitlist-lookup waitlist-lookup--result" aria-labelledby="waitlist-title">
+        <WaitlistCard className="waitlist-check-card--compact">
+          <div className="waitlist-compact">
+            <div>
+              <h1 id="waitlist-title" className="waitlist-compact__title">
+                Check your spot
+              </h1>
+              <p className="waitlist-compact__address" title={address}>
+                {shortAddress(address)}
+              </p>
+            </div>
+            <button className="cta-button cta-button--secondary" type="button" onClick={checkAnother}>
+              <span>Check another</span>
+            </button>
+          </div>
+        </WaitlistCard>
+
+        <PackReveal spots={spots} onRevealed={() => setRevealed(true)} />
+
+        <p className="visually-hidden" aria-live="polite">
+          {revealed ? cardMessage(spots) : ""}
+        </p>
+
+        {revealed ? (
+          spots > 0 ? (
+            <div className="waitlist-outcome waitlist-outcome--actions">
+              {shareImage(spots) ? (
+                <a
+                  className="cta-button cta-button--primary"
+                  href={shareImage(spots)!}
+                  download={`mutable-soldiers-${spots}-spots.webp`}
+                >
+                  <span>Download card</span>
+                </a>
+              ) : null}
+              <a
+                className="cta-button cta-button--secondary"
+                href={shareUrl(spots)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span>Share on X</span>
+              </a>
+            </div>
+          ) : (
+            <div className="waitlist-outcome waitlist-outcome--none">
+              <h2 className="waitlist-outcome__title">Ways to get a spot</h2>
+              <ul className="waitlist-ways">
+                {waysToGetASpot.map((way) => (
+                  <li key={way.label}>
+                    <a className="waitlist-way" href={way.href}>
+                      {way.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )
+        ) : null}
+      </section>
+    );
+  }
 
   return (
     <section className="waitlist-lookup" aria-labelledby="waitlist-title">
-      <GlassCard className="waitlist-check-card" flat>
+      <WaitlistCard>
         <h1 id="waitlist-title">Check your spot</h1>
 
         <form className="waitlist-form" onSubmit={handleSubmit} noValidate>
@@ -55,39 +174,45 @@ export function WaitlistLookup() {
 
           <div className="waitlist-form__controls">
             <input
+              ref={inputRef}
               id="xrpl-wallet-address"
               className="waitlist-input"
               name="walletAddress"
               type="text"
               value={address}
-              onChange={(event) => handleAddressChange(event.target.value)}
+              onChange={(event) => {
+                setAddress(event.target.value);
+                setInvalid(false);
+                if (status === "error") setStatus("idle");
+              }}
+              readOnly={status === "loading"}
               placeholder="r..."
               autoComplete="off"
               autoCapitalize="none"
               spellCheck={false}
-              aria-invalid={feedback.tone === "error"}
+              aria-invalid={invalid}
               aria-describedby="wallet-address-feedback"
             />
 
             <button
               className="cta-button cta-button--primary waitlist-submit"
               type="submit"
-              disabled={!address.trim()}
+              disabled={!address.trim() || status === "loading"}
             >
-              <span>Submit</span>
+              <span>{status === "loading" ? "Checking…" : "Check spot"}</span>
             </button>
           </div>
 
           <p
             id="wallet-address-feedback"
             className="waitlist-feedback"
-            data-tone={feedback.tone}
+            data-tone={invalid || status === "error" ? "error" : "idle"}
             aria-live="polite"
           >
-            {feedback.message}
+            {feedback}
           </p>
         </form>
-      </GlassCard>
+      </WaitlistCard>
     </section>
   );
 }
