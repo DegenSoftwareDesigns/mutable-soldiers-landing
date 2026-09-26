@@ -19,3 +19,13 @@ export async function lookupSpots(address: string): Promise<number> {
 
   return 0;
 }
+
+// Pre-rendered share cards live at public/assets/waitlist/share/spots-N.webp,
+// one per count. Counts above the maximum have no image.
+export const MAX_SHARE_SPOTS = 3; // TODO: team decision, one image per count
+
+export function shareImage(spots: number) {
+  return spots >= 1 && spots <= MAX_SHARE_SPOTS
+    ? `/assets/waitlist/share/spots-${spots}.webp`
+    : null;
+}

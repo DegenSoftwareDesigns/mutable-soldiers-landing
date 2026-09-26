@@ -7,7 +7,7 @@ import {
   PackReveal,
   preloadPack,
 } from "@/components/waitlist/PackReveal";
-import { lookupSpots } from "@/lib/waitlist/spots";
+import { lookupSpots, shareImage } from "@/lib/waitlist/spots";
 
 const xrplClassicAddress = /^r[1-9A-HJ-NP-Za-km-z]{24,34}$/;
 
@@ -24,10 +24,14 @@ function shortAddress(address: string) {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
 }
 
+// X can't attach images through an intent: the card comes from the link's
+// Open Graph image, so the link must point at a public URL.
 function shareUrl(spots: number) {
-  const text = `I've got ${spots} ${spots === 1 ? "spot" : "spots"} for Mutable Soldiers.`;
-  const url = `${window.location.origin}/waitlist`;
-  return `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+  const link = `${window.location.origin}/waitlist?spots=${spots}`;
+  const text = `⚔️I've got ${spots} ${spots === 1 ? "spot" : "spots"} for the new $ARMY Mutable Soldiers NFT Collection ⚔️
+
+What about you? 👉${link}`;
+  return `https://x.com/intent/post?text=${encodeURIComponent(text)}`;
 }
 
 export function WaitlistLookup() {
@@ -101,9 +105,18 @@ export function WaitlistLookup() {
 
         {revealed ? (
           spots > 0 ? (
-            <div className="waitlist-outcome">
+            <div className="waitlist-outcome waitlist-outcome--actions">
+              {shareImage(spots) ? (
+                <a
+                  className="cta-button cta-button--primary"
+                  href={shareImage(spots)!}
+                  download={`mutable-soldiers-${spots}-spots.webp`}
+                >
+                  <span>Download card</span>
+                </a>
+              ) : null}
               <a
-                className="cta-button cta-button--primary"
+                className="cta-button cta-button--secondary"
                 href={shareUrl(spots)}
                 target="_blank"
                 rel="noopener noreferrer"
