@@ -6,6 +6,8 @@ import { StaticGlassCard } from "./GlassCard";
 
 const pendingPages = ["Artists", "Drops"] as const;
 const pendingCommunityLinks = ["Army X", "Telegram", "xrp.cafe"] as const;
+const statsUrl =
+  "https://bithomp.com/token/rGG3wQ4kUzd7Jnmk1n5NWPZjjut62kCBfC/41524D5900000000000000000000000000000000";
 
 type SiteFooterProps = {
   placement?: "story" | "page" | "closing";
@@ -60,6 +62,14 @@ export function SiteFooter({ placement = "story" }: SiteFooterProps) {
               {pendingCommunityLinks.map((link) => (
                 <PendingFooterLink label={link} key={link} />
               ))}
+              <a
+                className="site-footer-link"
+                href={statsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Stats
+              </a>
             </nav>
       </div>
     </StaticGlassCard>
