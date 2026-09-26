@@ -15,6 +15,7 @@ import {
   maxDprForProfile,
   type ExperienceProfile,
 } from "@/lib/experience/profile";
+import { createViewportMutation } from "./viewportMutation";
 
 export type PackSceneReady = {
   usingFallbacks: boolean;
@@ -57,6 +58,21 @@ type PackDragState = {
   energy: number;
   targetEnergy: number;
   dragging: boolean;
+  glitch: PackGlitchState;
+};
+
+type PackGlitchState = {
+  charge: number;
+  active: boolean;
+  age: number;
+  shakeTime: number;
+  strength: number;
+  cooldown: number;
+  jumpTimer: number;
+  jumpOffset: THREE.Vector3;
+  jumpRotation: number;
+  jumpScale: number;
+  tinted: boolean;
 };
 
 type ActivePackDrag = {
@@ -84,6 +100,19 @@ function createPackDragState(): PackDragState {
     energy: 0,
     targetEnergy: 0,
     dragging: false,
+    glitch: {
+      charge: 0,
+      active: false,
+      age: 0,
+      shakeTime: 0,
+      strength: 0,
+      cooldown: 0,
+      jumpTimer: 0,
+      jumpOffset: new THREE.Vector3(),
+      jumpRotation: 0,
+      jumpScale: 0,
+      tinted: false,
+    },
   };
 }
 
@@ -343,6 +372,7 @@ function applyPackDrag(
   delta: number,
   heroActive: boolean,
   reduceMotion: boolean,
+  lockPlacement: boolean,
 ) {
   if (!heroActive) {
     state.dragging = false;
@@ -388,8 +418,11 @@ function applyPackDrag(
   state.targetTilt.multiplyScalar(gestureMemory);
   state.targetEnergy *= gestureMemory;
 
-  pack.transform.position.x += state.offset.x;
-  pack.transform.position.y += state.offset.y;
+  // The final-section packs keep their own placement; only tilt and glow react.
+  if (!lockPlacement) {
+    pack.transform.position.x += state.offset.x;
+    pack.transform.position.y += state.offset.y;
+  }
   const tiltScale = reduceMotion
     ? packMotion.interaction.reducedMotionTiltScale
     : 1;
@@ -400,6 +433,125 @@ function applyPackDrag(
     (pack.lastEmissiveIntensity ?? packMotion.glow.base) +
       state.energy * packMotion.interaction.emissiveBoost,
   );
+}
+
+// Easter egg: shaking a pack hard enough for long enough overloads it into a
+// "mutant" glitch that holds until the pack is released. Returns the glitch
+// strength so the canvas can add screen-space RGB split and shake.
+function applyPackGlitch(
+  pack: PackObject,
+  state: PackDragState,
+  delta: number,
+  elapsed: number,
+  heroActive: boolean,
+  reduceMotion: boolean,
+  lockPlacement: boolean,
+) {
+  const glitch = state.glitch;
+  const tuning = packMotion.glitch;
+
+  glitch.cooldown = Math.max(0, glitch.cooldown - delta);
+  if (!heroActive) {
+    glitch.active = false;
+    glitch.strength = 0;
+    glitch.charge = 0;
+  } else if (glitch.active) {
+    glitch.age += delta;
+    if (state.dragging && state.energy >= tuning.energyThreshold) {
+      glitch.shakeTime += delta;
+    }
+    if (state.dragging) {
+      glitch.strength = Math.min(
+        1,
+        glitch.strength + delta / tuning.fadeInSeconds,
+      );
+    } else {
+      glitch.strength = Math.max(
+        0,
+        glitch.strength - delta / tuning.releaseFadeSeconds,
+      );
+      if (glitch.strength === 0) {
+        glitch.active = false;
+        glitch.cooldown = tuning.cooldown;
+      }
+    }
+  } else if (
+    state.dragging &&
+    state.energy >= tuning.energyThreshold &&
+    glitch.cooldown === 0
+  ) {
+    glitch.charge = Math.min(1, glitch.charge + delta / tuning.chargeSeconds);
+    if (glitch.charge >= 1) {
+      glitch.charge = 0;
+      glitch.active = true;
+      glitch.age = 0;
+      glitch.shakeTime = 0;
+      glitch.strength = 0;
+      glitch.jumpTimer = 0;
+    }
+  } else {
+    glitch.charge = Math.max(0, glitch.charge - delta * tuning.chargeDecay);
+  }
+
+  if (!glitch.active) {
+    // Build-up hint: the pack starts to stutter as the charge nears overload.
+    const buildUp = Math.max(0, (glitch.charge - 0.35) / 0.65);
+    if (buildUp > 0 && !reduceMotion && !lockPlacement) {
+      const jitter = tuning.previewJitter * buildUp * buildUp;
+      pack.transform.position.x += (Math.random() - 0.5) * jitter;
+      pack.transform.position.y += (Math.random() - 0.5) * jitter;
+    }
+    return 0;
+  }
+
+  const strength = glitch.strength;
+
+  const hueShift = (elapsed * tuning.hueCyclesPerSecond) % 1;
+  for (const materialState of pack.materialStates) {
+    materialState.material.color
+      .copy(materialState.color)
+      .offsetHSL(hueShift * strength, tuning.saturationBoost * strength, 0);
+    materialState.material.emissive
+      .copy(materialState.emissive)
+      .offsetHSL(hueShift * strength, tuning.saturationBoost * strength, 0);
+  }
+  // Force setNeutralBlend to restore the original tint on the next frame.
+  pack.lastNeutralBlend = null;
+
+  const flicker =
+    Math.random() < 0.3 ? 1 : Math.random() * 0.4;
+  setEmissive(
+    pack,
+    (pack.lastEmissiveIntensity ?? packMotion.glow.base) +
+      flicker * tuning.emissiveFlicker * strength,
+  );
+
+  if (reduceMotion) return strength;
+
+  glitch.jumpTimer -= delta;
+  if (glitch.jumpTimer <= 0) {
+    glitch.jumpTimer = tuning.jumpInterval * (0.5 + Math.random());
+    if (Math.random() < 0.55) {
+      glitch.jumpOffset.set(
+        (Math.random() - 0.5) * 2 * tuning.jumpOffset,
+        (Math.random() - 0.5) * 2 * tuning.jumpOffset,
+        0,
+      );
+      glitch.jumpRotation = (Math.random() - 0.5) * 2 * tuning.jumpRotation;
+      glitch.jumpScale = (Math.random() - 0.5) * 2 * tuning.jumpScale;
+    } else {
+      glitch.jumpOffset.set(0, 0, 0);
+      glitch.jumpRotation = 0;
+      glitch.jumpScale = 0;
+    }
+  }
+  if (!lockPlacement) {
+    pack.transform.position.addScaledVector(glitch.jumpOffset, strength);
+    pack.transform.scale.multiplyScalar(1 + glitch.jumpScale * strength);
+  }
+  pack.transform.rotation.z += glitch.jumpRotation * strength;
+
+  return strength;
 }
 
 function updatePackState(
@@ -687,8 +839,10 @@ export function PackSceneCanvas({
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
 
-    const heroIsActive = () =>
-      progressSignal.get() <= packMotion.ranges.reposition[0];
+    // Packs can be shaken in the hero and once they return in the final section.
+    const packsInteractive = (progress = progressSignal.get()) =>
+      progress <= packMotion.ranges.reposition[0] ||
+      progress >= packMotion.ranges.finalReveal[0];
 
     const setPointerFromEvent = (event: PointerEvent) => {
       const bounds = renderer.domElement.getBoundingClientRect();
@@ -715,7 +869,7 @@ export function PackSceneCanvas({
         !interactionEnabled ||
         !packA ||
         !packB ||
-        !heroIsActive() ||
+        !packsInteractive() ||
         !setPointerFromEvent(event)
       ) {
         return null;
@@ -748,7 +902,10 @@ export function PackSceneCanvas({
       if (
         activeDrag ||
         event.button !== 0 ||
-        (event.pointerType !== "mouse" && event.pointerType !== "pen")
+        (event.pointerType !== "mouse" && event.pointerType !== "pen") ||
+        (event.target as Element | null)?.closest?.(
+          "a, button, input, textarea, select",
+        )
       ) {
         return;
       }
@@ -785,7 +942,7 @@ export function PackSceneCanvas({
       }
       if (event.pointerId !== activeDrag.pointerId) return;
       event.preventDefault();
-      if (!heroIsActive()) {
+      if (!packsInteractive()) {
         finishDrag();
         return;
       }
@@ -920,6 +1077,68 @@ export function PackSceneCanvas({
     resizeObserver.observe(host);
     resize();
 
+    let canvasGlitchActive = false;
+    let lastCanvasGlitchUpdate = 0;
+    const clearCanvasGlitch = () => {
+      if (!canvasGlitchActive) return;
+      canvasGlitchActive = false;
+      renderer.domElement.style.filter = "";
+      renderer.domElement.style.transform = "";
+    };
+    const applyCanvasGlitch = (strength: number, elapsed: number) => {
+      if (strength <= 0 || reducedMotionQuery.matches) {
+        clearCanvasGlitch();
+        return;
+      }
+      // Stepped updates read as digital corruption rather than smooth motion.
+      if (canvasGlitchActive && elapsed - lastCanvasGlitchUpdate < 0.05) return;
+      canvasGlitchActive = true;
+      lastCanvasGlitchUpdate = elapsed;
+      const split =
+        packMotion.glitch.rgbSplitPx * strength * (0.4 + Math.random() * 0.6);
+      const shake = packMotion.glitch.shakePx * strength;
+      const shakeX = (Math.random() - 0.5) * 2 * shake;
+      const shakeY = (Math.random() - 0.5) * shake;
+      const skew = Math.random() < 0.25 ? (Math.random() - 0.5) * 8 * strength : 0;
+      renderer.domElement.style.filter =
+        `drop-shadow(${split.toFixed(1)}px 0 rgba(255, 0, 90, 0.8)) ` +
+        `drop-shadow(${(-split).toFixed(1)}px 0 rgba(0, 255, 235, 0.8))`;
+      renderer.domElement.style.transform =
+        `translate(${shakeX.toFixed(1)}px, ${shakeY.toFixed(1)}px) skewX(${skew.toFixed(2)}deg)`;
+    };
+
+    // Keep shaking an already glitched pack and the whole viewport mutates.
+    const stage = host.closest<HTMLElement>(".experience-stage");
+    const viewportMutation =
+      interactionEnabled && stage ? createViewportMutation(stage) : null;
+    let mutationStrength = 0;
+    let mutationAge = 0;
+    const updateViewportMutation = (delta: number, elapsed: number) => {
+      if (!viewportMutation) return;
+      const mutating =
+        !reducedMotionQuery.matches &&
+        [dragA, dragB].some(
+          (state) =>
+            state.dragging &&
+            state.glitch.active &&
+            state.glitch.shakeTime >= packMotion.glitch.viewportDelaySeconds,
+        );
+      if (!mutating) {
+        if (mutationStrength > 0) {
+          mutationStrength = 0;
+          mutationAge = 0;
+          viewportMutation.release();
+        }
+        return;
+      }
+      mutationAge += delta;
+      mutationStrength = Math.min(
+        1,
+        mutationStrength + delta / packMotion.glitch.viewportFadeInSeconds,
+      );
+      viewportMutation.update(mutationStrength, mutationAge, elapsed);
+    };
+
     const clock = new THREE.Clock();
     const isRenderActive = (progress: number) =>
       progress <= packMotion.ranges.webglFade[1] + 0.005 ||
@@ -943,13 +1162,15 @@ export function PackSceneCanvas({
           reducedMotionQuery.matches,
           layoutTuning,
         );
-        const heroActive = heroIsActive();
+        const heroActive = packsInteractive(progress);
+        const lockPlacement = progress >= packMotion.ranges.finalReveal[0];
         applyPackDrag(
           packA,
           dragA,
           delta,
           heroActive,
           reducedMotionQuery.matches,
+          lockPlacement,
         );
         applyPackDrag(
           packB,
@@ -957,7 +1178,30 @@ export function PackSceneCanvas({
           delta,
           heroActive,
           reducedMotionQuery.matches,
+          lockPlacement,
         );
+        const glitchStrength = Math.max(
+          applyPackGlitch(
+            packA,
+            dragA,
+            delta,
+            elapsed,
+            heroActive,
+            reducedMotionQuery.matches,
+            lockPlacement,
+          ),
+          applyPackGlitch(
+            packB,
+            dragB,
+            delta,
+            elapsed,
+            heroActive,
+            reducedMotionQuery.matches,
+            lockPlacement,
+          ),
+        );
+        applyCanvasGlitch(glitchStrength, elapsed);
+        updateViewportMutation(delta, elapsed);
         const fusionProgress =
           progress < packMotion.ranges.zoom[1]
             ? smoothstep(
@@ -999,13 +1243,19 @@ export function PackSceneCanvas({
     };
 
     const stopRendering = () => {
+      clearCanvasGlitch();
+      if (mutationStrength > 0) {
+        mutationStrength = 0;
+        mutationAge = 0;
+        viewportMutation?.update(0, 0, 0);
+      }
       if (!frame) return;
       cancelAnimationFrame(frame);
       frame = 0;
     };
 
     const syncRenderActivity = (progress: number) => {
-      if (progress > packMotion.ranges.reposition[0]) finishDrag();
+      if (!packsInteractive(progress)) finishDrag();
       const nextRenderActive = isRenderActive(progress);
       if (nextRenderActive === renderActive) return;
       renderActive = nextRenderActive;
@@ -1064,6 +1314,7 @@ export function PackSceneCanvas({
       });
       window.removeEventListener("blur", finishDrag);
       restoreCursor();
+      viewportMutation?.dispose();
       resizeObserver.disconnect();
       if (packA) disposeObject(packA.transform);
       if (packB) disposeObject(packB.transform);
