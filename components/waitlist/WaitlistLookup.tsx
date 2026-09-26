@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { GlassCard } from "@/components/experience/GlassCard";
+import { StaticGlassCard } from "@/components/experience/GlassCard";
 import {
   cardMessage,
   PackReveal,
@@ -19,6 +19,24 @@ const waysToGetASpot = [
 ];
 
 type Status = "idle" | "loading" | "error" | "result";
+
+// Same material as the navbar and footer.
+function WaitlistCard({
+  className = "",
+  children,
+}: {
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <StaticGlassCard
+      className={`site-navbar-glass waitlist-check-card ${className}`}
+      cardClassName="site-navbar-surface"
+    >
+      {children}
+    </StaticGlassCard>
+  );
+}
 
 function shortAddress(address: string) {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
@@ -81,7 +99,7 @@ export function WaitlistLookup() {
   if (status === "result") {
     return (
       <section className="waitlist-lookup waitlist-lookup--result" aria-labelledby="waitlist-title">
-        <GlassCard className="waitlist-check-card waitlist-check-card--compact" flat>
+        <WaitlistCard className="waitlist-check-card--compact">
           <div className="waitlist-compact">
             <div>
               <h1 id="waitlist-title" className="waitlist-compact__title">
@@ -95,7 +113,7 @@ export function WaitlistLookup() {
               <span>Check another</span>
             </button>
           </div>
-        </GlassCard>
+        </WaitlistCard>
 
         <PackReveal spots={spots} onRevealed={() => setRevealed(true)} />
 
@@ -145,7 +163,7 @@ export function WaitlistLookup() {
 
   return (
     <section className="waitlist-lookup" aria-labelledby="waitlist-title">
-      <GlassCard className="waitlist-check-card" flat>
+      <WaitlistCard>
         <h1 id="waitlist-title">Check your spot</h1>
 
         <form className="waitlist-form" onSubmit={handleSubmit} noValidate>
@@ -193,7 +211,7 @@ export function WaitlistLookup() {
             {feedback}
           </p>
         </form>
-      </GlassCard>
+      </WaitlistCard>
     </section>
   );
 }

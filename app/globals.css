@@ -1500,18 +1500,23 @@ button {
 
 .waitlist-check-card {
   --glass-radius: clamp(1.75rem, 2.6vw, 3rem);
-  width: min(calc(100vw - 4rem), var(--experience-shell-max));
+  perspective: none;
+  width: min(100%, var(--experience-shell-max));
   margin-inline: auto;
-  animation: waitlist-card-enter 360ms cubic-bezier(0.2, 0, 0, 1) both;
+  animation: waitlist-card-enter 360ms cubic-bezier(0.2, 0, 0, 1);
 }
 
-.waitlist-check-card .glass-card__content {
+.waitlist-check-card .static-glass-card__content {
   padding: clamp(2rem, 4vw, 4rem);
-  transform: none;
 }
 
 .waitlist-check-card h1 {
   max-width: 12ch;
+  margin: 0;
+  font-family: var(--display-font);
+  font-weight: 500;
+  line-height: 0.88;
+  letter-spacing: -0.045em;
   font-size: clamp(3rem, 6.5vw, 7.25rem);
   text-wrap: balance;
 }
@@ -1627,10 +1632,10 @@ button {
 }
 
 .waitlist-check-card.waitlist-check-card--compact {
-  width: min(calc(100vw - 4rem), 34rem);
+  width: min(100%, 34rem);
 }
 
-.waitlist-check-card--compact .glass-card__content {
+.waitlist-check-card--compact .static-glass-card__content {
   padding: 0.85rem 0.85rem 0.85rem 1.5rem;
 }
 
@@ -1762,14 +1767,14 @@ button {
   transform: none;
 }
 
+/* Transform only: an animated opacity turns the card into a backdrop root and
+   the glass blur stops seeing the video behind it. */
 @keyframes waitlist-card-enter {
   from {
-    opacity: 0;
     transform: translateY(18px);
   }
 
   to {
-    opacity: 1;
     transform: translateY(0);
   }
 }
@@ -1887,19 +1892,11 @@ button {
     padding: 5rem 1rem;
   }
 
-  .waitlist-check-card .glass-card__content {
+  .waitlist-check-card .static-glass-card__content {
     padding: 1.5rem;
   }
 
-  .waitlist-check-card {
-    width: calc(100vw - 2rem);
-  }
-
-  .waitlist-check-card.waitlist-check-card--compact {
-    width: calc(100vw - 2rem);
-  }
-
-  .waitlist-check-card--compact .glass-card__content {
+  .waitlist-check-card--compact .static-glass-card__content {
     padding: 0.75rem 0.75rem 0.75rem 1.1rem;
   }
 
