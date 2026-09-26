@@ -548,7 +548,15 @@ test("the final CTA and footer scroll as separate sections over the loop", async
   assert.match(footerSource, /href="\/#hero"/);
   assert.match(footerSource, /href="\/waitlist"/);
   assert.match(footerSource, /\["Artists", "Drops"\]/);
-  assert.match(footerSource, /\["Army X", "Telegram", "xrp\.cafe"\]/);
+  assert.match(
+    footerSource,
+    /label: "Army X", href: "https:\/\/x\.com\/ARMY_XRP589"/,
+  );
+  assert.match(footerSource, /label: "Telegram", href: null/);
+  assert.match(footerSource, /label: "xrp\.cafe", href: null/);
+  assert.match(footerSource, /label: "Stats"/);
+  assert.match(footerSource, /https:\/\/bithomp\.com\/token\//);
+  assert.match(footerSource, /rel="noopener noreferrer"/);
   assert.match(footerSource, /disabled/);
   assert.match(experienceSource, /footer:\s*uiWindows\.footer/);
   assert.match(experienceSource, /<SiteFooter placement="closing" \/>/);
