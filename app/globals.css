@@ -1503,11 +1503,78 @@ button {
   perspective: none;
   width: min(100%, var(--experience-shell-max));
   margin-inline: auto;
-  animation: waitlist-card-enter 360ms cubic-bezier(0.2, 0, 0, 1);
+  animation: waitlist-card-enter 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Same look as .site-navbar-surface, minus !important so the entrance can
+   animate the rim. */
+.waitlist-glass-surface {
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow:
+    inset 1.5px 1.5px 0 rgba(255, 255, 255, 0.32),
+    inset -1.5px -1.5px 1px rgba(0, 0, 0, 0.35),
+    inset 0 0 24px rgba(255, 255, 255, 0.04),
+    0 12px 30px rgba(0, 0, 0, 0.32),
+    0 0 1.75rem rgba(132, 64, 255, 0.06);
+  animation: waitlist-rim-in 900ms 120ms cubic-bezier(0.2, 0, 0, 1) backwards;
+}
+
+.waitlist-check-card .spectrum-hero-card__surface {
+  animation: waitlist-glass-form 850ms cubic-bezier(0.2, 0, 0, 1) both;
 }
 
 .waitlist-check-card .static-glass-card__content {
   padding: clamp(2rem, 4vw, 4rem);
+}
+
+/* One pass of light across the glass once it has formed. */
+.waitlist-glint {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  overflow: hidden;
+  border-radius: var(--glass-radius);
+  pointer-events: none;
+}
+
+.waitlist-glint::before {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.14) 46%,
+    rgba(196, 176, 255, 0.1) 52%,
+    transparent 68%
+  );
+  transform: translateX(-100%);
+  animation: waitlist-glint 1100ms 300ms cubic-bezier(0.45, 0, 0.2, 1) both;
+}
+
+/* Content writes itself in, left to right, one row after another. */
+.waitlist-check-card h1,
+.waitlist-form > *,
+.waitlist-compact > * {
+  animation: waitlist-wipe 1300ms cubic-bezier(0.3, 0.1, 0.2, 1) backwards;
+}
+
+.waitlist-check-card h1,
+.waitlist-compact > :first-child {
+  animation-delay: 700ms;
+}
+
+.waitlist-form > :nth-child(1),
+.waitlist-compact > :nth-child(2) {
+  animation-delay: 950ms;
+}
+
+.waitlist-form > :nth-child(2) {
+  animation-delay: 1150ms;
+}
+
+.waitlist-form > :nth-child(3) {
+  animation-delay: 1350ms;
 }
 
 .waitlist-check-card h1 {
@@ -1691,7 +1758,7 @@ button {
   display: grid;
   justify-items: center;
   gap: 1rem;
-  animation: waitlist-card-enter 360ms cubic-bezier(0.2, 0, 0, 1) both;
+  animation: waitlist-fade-in 360ms cubic-bezier(0.2, 0, 0, 1) both;
 }
 
 .waitlist-outcome--actions {
@@ -1767,14 +1834,69 @@ button {
   transform: none;
 }
 
-/* Transform only: an animated opacity turns the card into a backdrop root and
-   the glass blur stops seeing the video behind it. */
+/* Only the glass surface itself fades/unblurs. An animated opacity on the
+   card or any ancestor makes it a backdrop root and kills the blur. */
 @keyframes waitlist-card-enter {
   from {
-    transform: translateY(18px);
+    transform: translateY(14px) scale(0.965);
+  }
+}
+
+@keyframes waitlist-glass-form {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0px) saturate(100%);
+    -webkit-backdrop-filter: blur(0px) saturate(100%);
   }
 
   to {
+    opacity: 1;
+    backdrop-filter: var(--glass-backdrop);
+    -webkit-backdrop-filter: var(--glass-backdrop);
+  }
+}
+
+@keyframes waitlist-rim-in {
+  from {
+    border-color: transparent;
+    box-shadow: none;
+  }
+}
+
+@keyframes waitlist-glint {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* The mask only exists while animating, so focus rings and glows are never
+   clipped afterwards. */
+@keyframes waitlist-wipe {
+  from {
+    transform: translateX(-16px);
+    mask-image: linear-gradient(90deg, #000 35%, transparent 65%);
+    mask-size: 300% 100%;
+    mask-repeat: no-repeat;
+    mask-position: 100% 0;
+  }
+
+  to {
+    transform: none;
+    mask-image: linear-gradient(90deg, #000 35%, transparent 65%);
+    mask-size: 300% 100%;
+    mask-repeat: no-repeat;
+    mask-position: 0 0;
+  }
+}
+
+@keyframes waitlist-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
     transform: translateY(0);
   }
 }
@@ -2440,6 +2562,11 @@ button {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+  }
+
+  .waitlist-check-card,
+  .waitlist-check-card * {
+    animation-delay: 0s !important;
   }
 
   .glass-card {

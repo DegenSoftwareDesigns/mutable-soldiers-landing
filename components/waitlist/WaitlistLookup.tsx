@@ -31,8 +31,9 @@ function WaitlistCard({
   return (
     <StaticGlassCard
       className={`site-navbar-glass waitlist-check-card ${className}`}
-      cardClassName="site-navbar-surface"
+      cardClassName="waitlist-glass-surface"
     >
+      <span className="waitlist-glint" aria-hidden="true" />
       {children}
     </StaticGlassCard>
   );
