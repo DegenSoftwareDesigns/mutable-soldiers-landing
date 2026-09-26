@@ -5,7 +5,16 @@ import Link from "next/link";
 import { StaticGlassCard } from "./GlassCard";
 
 const pendingPages = ["Artists", "Drops"] as const;
-const pendingCommunityLinks = ["Army X", "Telegram", "xrp.cafe"] as const;
+// A null href renders a disabled "coming soon" button.
+const communityLinks: ReadonlyArray<{ label: string; href: string | null }> = [
+  { label: "Army X", href: "https://x.com/ARMY_XRP589" },
+  { label: "Telegram", href: null },
+  { label: "xrp.cafe", href: null },
+  {
+    label: "Stats",
+    href: "https://bithomp.com/token/rGG3wQ4kUzd7Jnmk1n5NWPZjjut62kCBfC/41524D5900000000000000000000000000000000",
+  },
+];
 
 type SiteFooterProps = {
   placement?: "story" | "page" | "closing";
@@ -57,9 +66,21 @@ export function SiteFooter({ placement = "story" }: SiteFooterProps) {
 
             <nav className="site-footer-column" aria-label="Community links">
               <h2>Links</h2>
-              {pendingCommunityLinks.map((link) => (
-                <PendingFooterLink label={link} key={link} />
-              ))}
+              {communityLinks.map(({ label, href }) =>
+                href ? (
+                  <a
+                    className="site-footer-link"
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    key={label}
+                  >
+                    {label}
+                  </a>
+                ) : (
+                  <PendingFooterLink label={label} key={label} />
+                ),
+              )}
             </nav>
       </div>
     </StaticGlassCard>
